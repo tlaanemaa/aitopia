@@ -12,8 +12,8 @@ export const characterSchema = z.object({
     name: z.string({ description: 'The name of the character, for example "Bob"', }),
     speech: z.string({ description: 'The last thing the character said' }),
     thought: z.string({ description: 'The last thing the character thought' }),
-    positionX: z.number({ description: 'The x coordinate of the character. 0-100' }),
-    positionY: z.number({ description: 'The y coordinate of the character. 0-100' }),
+    positionX: z.number({ description: 'The x coordinate of the character. From 0 to 100 where 50 is the middle of the screen' }),
+    positionY: z.number({ description: 'The y coordinate of the character. From 0 to 100 where 50 is the middle of the screen' }),
 });
 
 export type Character = z.infer<typeof characterSchema>;
@@ -48,8 +48,8 @@ export const useGameStore = create<GameState>()(
             // Parse the patch
             const parsedPatch = characterPatchSchema.parse(patch);
             parsedPatch.name = parsedPatch.name.trim() || 'Unknown';
-            parsedPatch.positionX = Math.max(0, Math.min(100, parsedPatch.positionX || 0));
-            parsedPatch.positionY = Math.max(0, Math.min(100, parsedPatch.positionY || 0));
+            parsedPatch.positionX = Math.max(0, Math.min(100, parsedPatch.positionX ?? 50));
+            parsedPatch.positionY = Math.max(0, Math.min(100, parsedPatch.positionY ?? 50));
 
             // Get the target character
             if (state.characters[parsedPatch.name] == null) {

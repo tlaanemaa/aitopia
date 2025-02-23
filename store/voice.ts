@@ -1,10 +1,18 @@
-function getVoiceForName(name: string) {
-    const voices = speechSynthesis.getVoices();
-    if (!voices.length) {
-        console.warn("Voices not loaded yet. Try running after a short delay.");
-        return null;
+function getVoiceForName(name: string, callback: (voice: SpeechSynthesisVoice | null) => void) {
+    let voices = speechSynthesis.getVoices();
+
+    if (voices.length > 0) {
+        return callback(pickVoice(name, voices));
     }
 
+    // Listen for voices changed event
+    speechSynthesis.onvoiceschanged = () => {
+        voices = speechSynthesis.getVoices();
+        callback(pickVoice(name, voices));
+    };
+}
+
+function pickVoice(name: string, voices: SpeechSynthesisVoice[]) {
     const seed = Array.from(name).reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const voiceIndex = seed % voices.length;
     return voices[voiceIndex];
@@ -13,15 +21,10 @@ function getVoiceForName(name: string) {
 export function readOutLoud(name: string, text: string) {
     const utterance = new SpeechSynthesisUtterance(text);
 
-    function setVoice() {
-        const voice = getVoiceForName(name);
+    getVoiceForName(name, (voice) => {
         if (voice) {
             utterance.voice = voice;
-            speechSynthesis.speak(utterance);
-        } else {
-            setTimeout(setVoice, 100); // Retry until voices are available
         }
-    }
-
-    setVoice();
+        speechSynthesis.speak(utterance);
+    });
 }

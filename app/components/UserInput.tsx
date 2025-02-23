@@ -5,7 +5,7 @@ import { useGameStore } from "@/store/gameStore";
 import { nextTurn } from "../actions/nextTurn";
 
 export default function UserInput() {
-  const { loading } = useGameStore();
+  const { loading, turn } = useGameStore();
   const [input, setInput] = useState("");
 
   const sendInput = async () => {
@@ -36,7 +36,7 @@ export default function UserInput() {
           onClick={sendInput}
           className="px-4 py-2 bg-gray-800 text-white rounded-full hover:bg-gray-900 disabled:bg-gray-500"
         >
-          {loading ? "Thinking..." : "Next Turn"}
+          {loading ? "Thinking..." : turn > 0 ? "Next Turn" : "Start game"}
         </button>
       </div>
     </div>

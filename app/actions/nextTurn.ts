@@ -3,7 +3,7 @@
 import { getStore } from "@/store/gameStore";
 import { promptLLM } from "./promptLLM";
 
-export async function nextTurn(userInput?: string) {
+export async function nextTurn(userInput?: string, iteration = 0) {
     const { characters, actionLog, setCharacter, addTurn, setLoading, addLog } = getStore();
     try {
         setLoading(true);
@@ -21,7 +21,7 @@ export async function nextTurn(userInput?: string) {
         });
 
 
-        if (llmResponse.goAgain) await nextTurn();
+        if (llmResponse.goAgain && iteration < 10) await nextTurn(undefined, iteration + 1);
     } catch (error) {
         addLog(String(error));
     } finally {

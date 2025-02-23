@@ -18,57 +18,45 @@ export default function Character({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const margin = 50;
-  const positionX =
+  const margin = 100;
+  const characterHeight = 64;
+  const characterWidth = 64;
+  const offsetX =
     (character.positionX / 100) * (screenWidth - 2 * margin) +
-    margin +
-    (screenWidth / 2 - 32);
-  const positionY =
+    margin -
+    characterWidth;
+  const offsetY =
     (character.positionY / 100) * (screenHeight - 2 * margin) +
-    margin +
-    (screenHeight / 2 - 32);
+    margin -
+    characterHeight;
 
   return (
     <div
-      className="absolute transition-transform duration-1000"
+      className="fixed top-0 left-0 transition-transform duration-2000"
       style={{
-        transform: `translate(${positionX}px, ${positionY}px)`,
+        transform: `translate(${offsetX}px, ${offsetY}px)`,
       }}
     >
       <div className="relative flex flex-col items-center">
         <Image
           src="/among_us.webp"
           alt={character.name}
-          width={64}
-          height={64}
+          width={characterWidth}
+          height={characterHeight}
           className="w-16 h-16 rounded-full z-10"
         />
         <div className="absolute -bottom-5 p-1 rounded-md text-center text-lg font-semibold bg-opacity-20 bg-black whitespace-pre">
           {character.name}
         </div>
         {(character.thought || character.speech) && (
-          <div className="absolute bottom-full flex flex-col p-1 rounded-md items-center space-y-2 bg-opacity-20 bg-black">
+          <div className="absolute bottom-full flex flex-col p-1 w-[400px] rounded-md items-center space-y-2 bg-opacity-20 bg-black">
             {character.thought && (
-              <div
-                className="opacity-70 text-white"
-                style={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
+              <div className="opacity-70 text-white text-ellipsis text-center">
                 {`💭 ${character.thought}`}
               </div>
             )}
             {character.speech && (
-              <div
-                className="text-white"
-                style={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
+              <div className="text-white text-ellipsis text-center">
                 {`💬 ${character.speech}`}
               </div>
             )}
