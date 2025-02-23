@@ -11,8 +11,8 @@ export const characterSchema = z.object({
     name: z.string({ description: 'The name of the character, for example "Bob"', }),
     speech: z.string({ description: 'The last thing the character said' }),
     thought: z.string({ description: 'The last thing the character thought' }),
-    positionX: z.number({ description: 'The x coordinate of the character. From 0 to 100' }),
-    positionY: z.number({ description: 'The y coordinate of the character. From 0 to 100' }),
+    positionX: z.number({ description: 'The x coordinate of the character. 0-100' }),
+    positionY: z.number({ description: 'The y coordinate of the character. 0-100' }),
 });
 
 export type Character = z.infer<typeof characterSchema>;
@@ -40,25 +40,32 @@ export const useGameStore = create<GameState>()(
         setLoading: (loading: boolean) => set({ loading }),
 
         characters: {
-            // "Zorg": characterSchema.parse({ name: "Zorg", speech: "I am Zorg", thought: "I am Zorg, I think.", positionX: 200, positionY: 100 }),
+            // "Zorg": characterSchema.parse({ name: "Zorg", speech: "I am Zorg", thought: "I am Zorg, I think.", positionX: 20, positionY: 20 }),
         },
         setCharacter: (patch: CharacterPatch) => set((state) => {
+            // Parse the patch
+            const parsedPatch = characterPatchSchema.parse(patch);
+            parsedPatch.name = parsedPatch.name.trim() || 'Unknown';
+            parsedPatch.positionX = Math.max(0, Math.min(100, parsedPatch.positionX || 0));
+            parsedPatch.positionY = Math.max(0, Math.min(100, parsedPatch.positionY || 0));
+
             // Get the target character
-            if (state.characters[patch.name] == null) {
-                state.actionLog.push(toLog(`A new character named "${patch.name}" has entered the story`));
-                state.characters[patch.name] = characterSchema.parse({ name: patch.name, speech: '', thought: '', positionX: 0, positionY: 0 });
+            if (state.characters[parsedPatch.name] == null) {
+                state.actionLog.push(toLog(`A new character named "${parsedPatch.name}" has entered the story`));
+                state.characters[parsedPatch.name] = characterSchema.parse({ name: parsedPatch.name, speech: '', thought: '', positionX: 0, positionY: 0 });
             }
 
-            // Parse and apply the patch
-            const parsedPatch = characterPatchSchema.parse(patch);
+            // PApply the patch
             if (!parsedPatch.speech?.trim()) delete parsedPatch.speech;
             if (!parsedPatch.thought?.trim()) delete parsedPatch.thought;
-            state.characters[patch.name] = { ...state.characters[patch.name], ...parsedPatch };
+            state.characters[parsedPatch.name] = { ...state.characters[parsedPatch.name], ...parsedPatch };
 
             // Add log entries
-            if (parsedPatch.speech) state.actionLog.push(toLog(`${patch.name} said: ${patch.speech}`));
-            if (parsedPatch.thought) state.actionLog.push(toLog(`${patch.name} thought: ${patch.thought}`));
-            if (patch.positionX != null || patch.positionY != null) state.actionLog.push(toLog(`${patch.name} moved to x=${patch.positionX}, y=${patch.positionY}`));
+            if (parsedPatch.speech) state.actionLog.push(toLog(`${parsedPatch.name} said: ${parsedPatch.speech}`));
+            if (parsedPatch.thought) state.actionLog.push(toLog(`${parsedPatch.name} thought: ${parsedPatch.thought}`));
+            if (parsedPatch.positionX != null || parsedPatch.positionY != null) {
+                state.actionLog.push(toLog(`${parsedPatch.name} moved to x=${parsedPatch.positionX}, y=${parsedPatch.positionY}`));
+            }
         }),
 
         actionLog: [],

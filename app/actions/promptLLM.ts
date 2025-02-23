@@ -9,6 +9,7 @@ import { z } from "zod";
 const SYSTEM_PROMPT = `
 You are controlling characters in a story. You can move them around, and make them talk and think.
 If you want to add a character, simply give them an action.
+Avoid stacking characters on top of each other, as this will make it difficult to see them.
 `;
 
 const STATE_PROMPT = `

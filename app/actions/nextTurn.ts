@@ -6,6 +6,7 @@ import { promptLLM } from "./promptLLM";
 export async function nextTurn(userInput: string) {
     const { characters, actionLog, setCharacter, addTurn, setLoading } = getStore();
     setLoading(true);
+    addTurn();
     const llmResponse = await promptLLM(
         userInput,
         Object.values(characters),
@@ -17,7 +18,7 @@ export async function nextTurn(userInput: string) {
         console.log("Action:", action);
     });
 
-    addTurn();
+
     if (llmResponse.goAgain) await nextTurn(userInput);
     setLoading(false);
 }
