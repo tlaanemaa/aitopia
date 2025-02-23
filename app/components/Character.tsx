@@ -9,7 +9,7 @@ export default function Character({
       <p>{character.speech}</p>
       <p>{character.thought}</p>
       <p>
-        {character.position.x}, {character.position.y}
+        {character.positionX}, {character.positionY}
       </p>
     </div>
   );

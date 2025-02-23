@@ -12,8 +12,15 @@ If you want to add a character, simply give them an action.
 `;
 
 const STATE_PROMPT = `
-The current state of the characters in the story is the following:
+The current state of characters in the game is as follows:
+<game_state>
 {STATE}
+</game_state>
+
+The log of recent actions is as follows:
+<action_log>
+{ACTION_LOG}
+</action_log>
 `;
 
 const TASK_PROMPT = `
@@ -38,21 +45,22 @@ const model = new ChatOpenAI({
 });
 
 const responseFormat = z.object({
-    actions: z.array(characterPatchSchema, { description: "The actions to take this turn" }).default([]),
-    goAgain: z.boolean({ description: "Whether you want to take another turn" }).default(false),
+    characterActions: z.array(characterPatchSchema, { description: "The actions you want to take with characters this turn" }),
+    goAgain: z.boolean({ description: "Whether you want to take another turn" }),
 });
 
 /**
  * Prompts the LLM to take their turn in the game
  */
-export async function promptLLM(characters: Character[], userInput = "") {
-    console.log("Prompting LLM with characters", characters);
+export async function promptLLM(userInput = "", characters: Character[], actionLog: string[]) {
     const structuredLlm = model.withStructuredOutput(responseFormat);
     const prompt = await promptTemplate.invoke({
         STATE: JSON.stringify(characters, null, 2),
+        ACTION_LOG: actionLog.slice(-50).map(x => `- ${x}`).join("\n"),
         USER_INPUT: userInput || "No input provided",
     });
+    console.log("Prompting LLM:", prompt.toString());
     const response = await structuredLlm.invoke(prompt);
-    console.log("LLM returned", response)
+    console.log("LLM response:", response);
     return response;
 }
