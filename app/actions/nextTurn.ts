@@ -4,11 +4,13 @@ import { getStore } from "@/store/gameStore";
 import { promptLLM } from "./promptLLM";
 
 export async function nextTurn(userInput?: string, iteration = 0) {
-    const { characters, actionLog, setCharacter, addTurn, setLoading, addLog } = getStore();
+    const { addLog } = getStore();
+    if (userInput && userInput.trim()) addLog(`The game master added these instructions: ${userInput}`);
+    const { characters, actionLog, setCharacter, addTurn, setLoading } = getStore();
+
     try {
         setLoading(true);
         addTurn();
-        if (userInput && userInput.trim()) addLog(`The game master said: ${userInput}`);
 
         const llmResponse = await promptLLM(
             Object.values(characters),
