@@ -39,7 +39,7 @@ const model = new ChatOpenAI({
     configuration: {
         baseURL: "http://192.168.1.29:11434/v1",
     },
-    model: "llama3.1:8b-instruct-q5_K_M",
+    model: "llama3.2:1b",
 });
 
 const responseFormat = z.object({
