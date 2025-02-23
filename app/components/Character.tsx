@@ -49,7 +49,7 @@ export default function Character({
           {character.name}
         </div>
         {(character.thought || character.speech) && (
-          <div className="absolute bottom-full flex flex-col p-1 w-[400px] rounded-md items-center space-y-2 bg-opacity-20 bg-black">
+          <div className="absolute bottom-full flex flex-col text-sm p-1 w-[300px] rounded-md items-center space-y-2 bg-opacity-20 bg-black">
             {character.thought && (
               <div className="opacity-70 text-white text-ellipsis text-center">
                 {`💭 ${character.thought}`}

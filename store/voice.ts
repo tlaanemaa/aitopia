@@ -1,30 +1,34 @@
-function getVoiceForName(name: string, callback: (voice: SpeechSynthesisVoice | null) => void) {
-    let voices = speechSynthesis.getVoices();
+const window = globalThis.window as Window;
+window?.speechSynthesis?.cancel();
 
-    if (voices.length > 0) {
-        return callback(pickVoice(name, voices));
+export async function speak(name: string, text: string) {
+    // Ensure any ongoing speech is cancelled
+    speechSynthesis.cancel();
+
+    // Wait for voices to be available
+    await new Promise<void>((resolve) => {
+        const voices = speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+            resolve();
+        } else {
+            speechSynthesis.onvoiceschanged = () => resolve();
+        }
+    });
+
+    // After loading, try to fetch voices again
+    const voices = speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) {
+        console.warn("No voices available.");
+        return;
     }
 
-    // Listen for voices changed event
-    speechSynthesis.onvoiceschanged = () => {
-        voices = speechSynthesis.getVoices();
-        callback(pickVoice(name, voices));
-    };
-}
-
-function pickVoice(name: string, voices: SpeechSynthesisVoice[]) {
-    const seed = Array.from(name).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    // Derive a seed from the name to pick a persistent voice
+    const seed = Array.from(name).reduce((sum, char) => sum + char.charCodeAt(0), 0);
     const voiceIndex = seed % voices.length;
-    return voices[voiceIndex];
-}
+    const voice = voices[voiceIndex];
 
-export function readOutLoud(name: string, text: string) {
+    // Create and speak the utterance
     const utterance = new SpeechSynthesisUtterance(text);
-
-    getVoiceForName(name, (voice) => {
-        if (voice) {
-            utterance.voice = voice;
-        }
-        speechSynthesis.speak(utterance);
-    });
+    utterance.voice = voice;
+    speechSynthesis.speak(utterance);
 }

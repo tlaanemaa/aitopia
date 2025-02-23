@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer'
-import { readOutLoud } from "./voice";
+import { speak } from "./voice";
 
 const toLog = (message: string) => {
     const ts = new Date().toLocaleTimeString();
@@ -70,7 +70,7 @@ export const useGameStore = create<GameState>()(
             }
 
             // Read out loud the character's speech
-            if (parsedPatch.speech) readOutLoud(parsedPatch.name, parsedPatch.speech);
+            if (parsedPatch.speech) speak(parsedPatch.name, parsedPatch.speech);
         }),
 
         actionLog: [],

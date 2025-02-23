@@ -29,12 +29,12 @@ export default function UserInput() {
           disabled={loading}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-grow py-2 px-4 rounded-full focus:outline-none disabled:bg-gray-200 bg-white text-gray-900"
+          className="flex-grow py-2 px-4 rounded-full focus:outline-none disabled:bg-gray-200 bg-white text-gray-900 min-w-1"
         />
         <button
           disabled={loading}
           onClick={sendInput}
-          className="px-4 py-2 bg-gray-800 text-white rounded-full hover:bg-gray-900 disabled:bg-gray-500"
+          className="px-4 py-2 bg-gray-800 text-white rounded-full hover:bg-gray-900 disabled:bg-gray-500 whitespace-nowrap"
         >
           {loading ? "Thinking..." : turn > 0 ? "Next Turn" : "Start game"}
         </button>
