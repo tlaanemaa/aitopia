@@ -16,6 +16,8 @@ export const characterPatchSchema = characterSchema.partial();
 export type CharacterPatch = z.infer<typeof characterPatchSchema>;
 
 interface GameState {
+    turn: number;
+    addTurn: () => void;
     characters: Character[];
     setCharacter: (patch: Partial<Character>) => void;
     actionLog: string[];
@@ -24,7 +26,9 @@ interface GameState {
     setUserInput: (input: string) => void;
 }
 
-const useGameStore = create<GameState>((set) => ({
+export const useGameStore = create<GameState>((set) => ({
+    turn: 0,
+    addTurn: () => set((state) => ({ turn: state.turn + 1 })),
     characters: [],
     setCharacter: (patch: Partial<Character>) => set((state) => {
         const characterIndex = state.characters.findIndex((character) => character.name === patch.name);
