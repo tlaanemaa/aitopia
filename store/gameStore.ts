@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer'
+import { readOutLoud } from "./voice";
 
 const toLog = (message: string) => {
     const ts = new Date().toLocaleTimeString();
@@ -67,6 +68,9 @@ export const useGameStore = create<GameState>()(
             if (parsedPatch.positionX != null || parsedPatch.positionY != null) {
                 state.actionLog.push(toLog(`${parsedPatch.name} moved to x=${parsedPatch.positionX}, y=${parsedPatch.positionY}`));
             }
+
+            // Read out loud the character's speech
+            if (parsedPatch.speech) readOutLoud(parsedPatch.name, parsedPatch.speech);
         }),
 
         actionLog: [],

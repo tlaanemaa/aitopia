@@ -21,22 +21,22 @@ export default function UserInput() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center p-2">
-      <div className="flex items-center space-x-4 w-full max-w-2xl bg-white p-2 rounded-full shadow-lg">
+      <div className="flex items-center space-x-2 w-full max-w-2xl bg-white p-2 rounded-full shadow-lg">
         <input
           type="text"
-          placeholder={loading ? "Loading..." : "Type your instructions..."}
+          placeholder="Type your instructions..."
           value={input}
           disabled={loading}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-grow p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 bg-white text-gray-900"
+          className="flex-grow py-2 px-4 rounded-full focus:outline-none disabled:bg-gray-200 bg-white text-gray-900"
         />
         <button
           disabled={loading}
           onClick={sendInput}
           className="px-4 py-2 bg-gray-800 text-white rounded-full hover:bg-gray-900 disabled:bg-gray-500"
         >
-          Next turn
+          {loading ? "Thinking..." : "Next Turn"}
         </button>
       </div>
     </div>

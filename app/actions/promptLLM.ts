@@ -37,9 +37,9 @@ const promptTemplate = ChatPromptTemplate.fromMessages([
 const model = new ChatOpenAI({
     apiKey: "asd",
     configuration: {
-        baseURL: "http://localhost:11434/v1",
+        baseURL: "http://192.168.1.29:11434/v1",
     },
-    model: "llama3.2:1b",
+    model: "llama3.1:8b-instruct-q5_K_M",
 });
 
 const responseFormat = z.object({

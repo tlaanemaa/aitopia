@@ -8,9 +8,9 @@ import UserInput from "./components/UserInput";
 export default function Home() {
   return (
     <div>
-      <ActionLog />
-      <TurnCounter />
       <GameField />
+      <TurnCounter />
+      <ActionLog />
       <UserInput />
     </div>
   );
