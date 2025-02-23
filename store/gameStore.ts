@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer'
 
 const toLog = (message: string) => {
-    const ts = new Date().toLocaleString();
+    const ts = new Date().toLocaleTimeString();
     return `[${ts}] ${message}`
 };
 
