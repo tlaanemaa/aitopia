@@ -18,10 +18,15 @@ export default function Character({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const margin = 50;
   const positionX =
-    (character.positionX / 100) * screenWidth + screenWidth / 2 - 32;
+    (character.positionX / 100) * (screenWidth - 2 * margin) +
+    margin +
+    (screenWidth / 2 - 32);
   const positionY =
-    (character.positionY / 100) * screenHeight + screenHeight / 2 - 32;
+    (character.positionY / 100) * (screenHeight - 2 * margin) +
+    margin +
+    (screenHeight / 2 - 32);
 
   return (
     <div
@@ -34,8 +39,8 @@ export default function Character({
         <Image
           src="/among_us.webp"
           alt={character.name}
-          width={128}
-          height={128}
+          width={64}
+          height={64}
           className="w-16 h-16 rounded-full z-10"
         />
         <div className="absolute -bottom-5 p-1 rounded-md text-center text-lg font-semibold bg-opacity-20 bg-black">

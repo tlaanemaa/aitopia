@@ -3,12 +3,13 @@
 import { getStore } from "@/store/gameStore";
 import { promptLLM } from "./promptLLM";
 
-export async function nextTurn(userInput: string) {
-    const { characters, actionLog, setCharacter, addTurn, setLoading } = getStore();
+export async function nextTurn(userInput?: string) {
+    const { characters, actionLog, setCharacter, addTurn, setLoading, addLog } = getStore();
     setLoading(true);
     addTurn();
+    if (userInput && userInput.trim()) addLog(`The game master said: ${userInput}`);
+
     const llmResponse = await promptLLM(
-        userInput,
         Object.values(characters),
         actionLog
     );
@@ -19,6 +20,6 @@ export async function nextTurn(userInput: string) {
     });
 
 
-    if (llmResponse.goAgain) await nextTurn(userInput);
+    if (llmResponse.goAgain) await nextTurn();
     setLoading(false);
 }

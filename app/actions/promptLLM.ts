@@ -7,29 +7,26 @@ import { characterPatchSchema } from "@/store/gameStore";
 import { z } from "zod";
 
 const SYSTEM_PROMPT = `
-You are controlling characters in a story. You can move them around, and make them talk and think.
-If you want to add a character, simply give them an action.
-Avoid stacking characters on top of each other, as this will make it difficult to see them.
+You are the game master, controlling characters in the story. You can move characters, make them speak, and have them think. 
+To add a character, simply assign them an action. 
+Please avoid placing characters on top of each other, as it will hinder visibility.
 `;
 
 const STATE_PROMPT = `
-The current state of characters in the game is as follows:
+Current character states in the game:
 <game_state>
 {STATE}
 </game_state>
 
-The log of recent actions is as follows:
+Recent actions taken:
 <action_log>
 {ACTION_LOG}
 </action_log>
 `;
 
 const TASK_PROMPT = `
-The user has provided the following input:
-{USER_INPUT}
-
-What is your next action?
-`
+What action do you want to take next?
+`;
 
 const promptTemplate = ChatPromptTemplate.fromMessages([
     ["system", SYSTEM_PROMPT.trim()],
@@ -53,12 +50,11 @@ const responseFormat = z.object({
 /**
  * Prompts the LLM to take their turn in the game
  */
-export async function promptLLM(userInput = "", characters: Character[], actionLog: string[]) {
+export async function promptLLM(characters: Character[], actionLog: string[]) {
     const structuredLlm = model.withStructuredOutput(responseFormat);
     const prompt = await promptTemplate.invoke({
         STATE: JSON.stringify(characters, null, 2),
         ACTION_LOG: actionLog.slice(-50).map(x => `- ${x}`).join("\n"),
-        USER_INPUT: userInput || "No input provided",
     });
     console.log("Prompting LLM:", prompt.toString());
     const response = await structuredLlm.invoke(prompt);

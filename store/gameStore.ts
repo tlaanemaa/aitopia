@@ -27,6 +27,7 @@ interface GameState {
     characters: Record<Character["name"], Character>;
     setCharacter: (patch: CharacterPatch) => void;
     actionLog: string[];
+    addLog: (message: string) => void;
     userInput: string;
     setUserInput: (input: string) => void;
 }
@@ -69,6 +70,9 @@ export const useGameStore = create<GameState>()(
         }),
 
         actionLog: [],
+        addLog: (message: string) => set((state) => {
+            state.actionLog.push(toLog(message));
+        }),
 
         userInput: '',
         setUserInput: (input: string) => set({ userInput: input }),
