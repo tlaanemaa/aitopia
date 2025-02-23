@@ -43,7 +43,7 @@ export default function Character({
           height={64}
           className="w-16 h-16 rounded-full z-10"
         />
-        <div className="absolute -bottom-5 p-1 rounded-md text-center text-lg font-semibold bg-opacity-20 bg-black">
+        <div className="absolute -bottom-5 p-1 rounded-md text-center text-lg font-semibold bg-opacity-20 bg-black whitespace-pre">
           {character.name}
         </div>
         {(character.thought || character.speech) && (
