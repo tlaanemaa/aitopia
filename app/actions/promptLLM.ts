@@ -1,10 +1,11 @@
-"use server";
+// "use server";
 
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatOllama } from "@langchain/ollama";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import type { Character } from "@/store/gameStore";
 import { characterPatchSchema } from "@/store/gameStore";
 import { z } from "zod";
+import { useSettingsStore } from '@/store/settingsStore';
 
 const SYSTEM_PROMPT = `
 You are the game master, controlling characters in the story. You can move characters, make them speak, and have them think. 
@@ -34,12 +35,9 @@ const promptTemplate = ChatPromptTemplate.fromMessages([
     ["user", TASK_PROMPT.trim()],
 ])
 
-const model = new ChatOpenAI({
-    apiKey: "asd",
-    configuration: {
-        baseURL: "http://localhost:11434/v1",
-    },
-    model: "qwen2.5:3b",
+const model = new ChatOllama({
+    baseUrl: "http://192.168.1.29:11434",
+    model: "llama3.2:3b",
 });
 
 const responseFormat = z.object({
@@ -51,13 +49,30 @@ const responseFormat = z.object({
  * Prompts the LLM to take their turn in the game
  */
 export async function promptLLM(characters: Character[], actionLog: string[]) {
-    const structuredLlm = model.withStructuredOutput(responseFormat);
-    const prompt = await promptTemplate.invoke({
-        STATE: JSON.stringify(characters, null, 2),
-        ACTION_LOG: actionLog.slice(-50).map(x => `- ${x}`).join("\n"),
-    });
-    console.log("Prompting LLM:", prompt.toString());
-    const response = await structuredLlm.invoke(prompt);
-    console.log("LLM response:", response);
-    return response;
+    const settings = useSettingsStore.getState();
+    
+    try {
+        const structuredLlm = model.withStructuredOutput(responseFormat);
+        const prompt = await promptTemplate.invoke({
+            STATE: JSON.stringify(characters, null, 2),
+            ACTION_LOG: actionLog.slice(-50).map(x => `- ${x}`).join("\n"),
+        });
+        console.log("Prompting LLM:", prompt.toString());
+        const response = await fetch(`${settings.endpoint}/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: settings.modelName,
+                prompt: prompt.toString(),
+                stream: false,
+            }),
+        });
+        console.log("LLM response:", response);
+        return response;
+    } catch (error) {
+        console.error("Error prompting LLM:", error);
+        return null;
+    }
 }
