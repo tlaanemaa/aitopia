@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aitopia
+
+A dynamic, AI-powered game world where characters come to life through LLM interactions. Characters move, speak, think, and interact in a minimalist, futuristic environment.
+
+## Features
+
+- 🎮 Interactive game world with AI-controlled characters
+- 🗣️ Text-to-speech for character dialogue
+- 🎯 Smart character positioning with collision avoidance
+- ⚙️ Configurable LLM settings (supports Ollama models)
+- 🎨 Minimalist, dark theme design
+- 📱 Responsive layout with mobile support
+
+## Prerequisites
+
+Before running Aitopia, you need:
+
+1. [Ollama](https://ollama.com/) installed and running on your machine
+2. A compatible LLM model pulled into Ollama (e.g., `llama2:3b`)
 
 ## Getting Started
 
-First, run the development server:
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/aitopia.git
+cd aitopia
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Click the settings gear icon in the top right
+2. Configure your Ollama endpoint (default: http://localhost:11434)
+3. Select your preferred model from the available models list
+4. Start interacting with the game!
 
-## Learn More
+## Usage
 
-To learn more about Next.js, take a look at the following resources:
+- Type instructions in the input box to guide the story
+- Characters will respond, move, and interact based on the AI's interpretation
+- Each character has their own consistent voice and appearance
+- Watch the action log to follow the story progression
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Development
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Built with:
 
-## Deploy on Vercel
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- Langchain
+- Framer Motion
+- Web Speech API
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
