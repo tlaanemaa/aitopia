@@ -1,85 +1,86 @@
 const window = globalThis.window as Window;
 window?.speechSynthesis?.cancel();
 
-export async function speak(name: string, text: string) {
-  // Check if speech synthesis is supported
-  if (!window?.speechSynthesis) {
-    console.warn("Speech synthesis not supported in this browser");
-    return;
+const SUPPORTED_LANGUAGES = [
+  'en', // English
+  'fr', // French
+  // Easy to add more:
+  // 'de', // German
+  // 'es', // Spanish
+  // 'it', // Italian
+];
+
+class SpeechManager {
+  private currentUtterance: SpeechSynthesisUtterance | null = null;
+
+  constructor() {
+    window?.speechSynthesis?.cancel();
   }
 
-  // Ensure any ongoing speech is cancelled
-  speechSynthesis.cancel();
+  // Initialize speech on first user interaction
+  public initializeVoices() {
+    if (!window?.speechSynthesis) return;
+    
+    const unlock = new SpeechSynthesisUtterance('');
+    unlock.volume = 0;
+    speechSynthesis.speak(unlock);
+  }
 
-  try {
-    // iOS Safari specific workaround to ensure speech synthesis works
-    if (
-      typeof window !== "undefined" &&
-      /iPad|iPhone|iPod/.test(window.navigator.userAgent)
-    ) {
-      speechSynthesis.resume();
-    }
-
-    // Wait for voices to be available
-    await new Promise<void>((resolve, reject) => {
-      const voices = speechSynthesis.getVoices();
-      if (voices && voices.length > 0) {
+  speak(name: string, text: string): Promise<void> {
+    return new Promise((resolve) => {
+      if (!window?.speechSynthesis) {
         resolve();
-      } else {
-        // Set a timeout to avoid hanging indefinitely
-        const timeout = setTimeout(() => {
-          reject(new Error("Timeout waiting for voices"));
-        }, 3000);
-
-        speechSynthesis.onvoiceschanged = () => {
-          clearTimeout(timeout);
-          resolve();
-        };
+        return;
       }
+
+      // Cancel any ongoing speech
+      if (this.currentUtterance) {
+        speechSynthesis.cancel();
+        this.currentUtterance = null;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      this.currentUtterance = utterance;
+
+      utterance.onend = () => {
+        this.currentUtterance = null;
+        resolve();
+      };
+
+      utterance.onerror = () => {
+        this.currentUtterance = null;
+        resolve();
+      };
+
+      this.setVoiceAndSpeak(utterance, name);
     });
+  }
 
-    // After loading, try to fetch voices again
-    const voices = speechSynthesis.getVoices();
-    if (!voices || voices.length === 0) {
-      throw new Error("No voices available");
-    }
-
-    // Derive a seed from the name to pick a persistent voice
-    const seed = Array.from(name).reduce(
-      (sum, char) => sum + char.charCodeAt(0),
-      0
+  private setVoiceAndSpeak(utterance: SpeechSynthesisUtterance, name: string) {
+    const allVoices = speechSynthesis.getVoices();
+    const voices = allVoices.filter(voice => 
+      SUPPORTED_LANGUAGES.some(lang => voice.lang.startsWith(lang))
     );
-    const voiceIndex = seed % voices.length;
-    const voice = voices[voiceIndex];
 
-    // Create and speak the utterance
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = voice;
-
-    // iOS Safari specific workaround
-    if (
-      typeof window !== "undefined" &&
-      /iPad|iPhone|iPod/.test(window.navigator.userAgent)
-    ) {
-      utterance.rate = 1.1; // Slightly faster rate for iOS
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0; // Maximum volume for iOS
-
-      // Add event listeners to handle iOS quirks
-      utterance.onstart = () => speechSynthesis.resume();
-      utterance.onend = () => speechSynthesis.resume();
-      utterance.onerror = () => speechSynthesis.resume();
-    }
-
-    speechSynthesis.speak(utterance);
-  } catch (error) {
-    console.warn("Speech synthesis failed:", error);
-    // Try to recover speech synthesis
-    if (
-      typeof window !== "undefined" &&
-      /iPad|iPhone|iPod/.test(window.navigator.userAgent)
-    ) {
-      speechSynthesis.resume();
+    if (voices.length > 0) {
+      const seed = Array.from(name).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      utterance.voice = voices[seed % voices.length];
+      utterance.lang = utterance.voice.lang; // Match the language to the voice
+      speechSynthesis.speak(utterance);
+    } else {
+      speechSynthesis.onvoiceschanged = () => {
+        const newVoices = speechSynthesis.getVoices().filter(voice => 
+          SUPPORTED_LANGUAGES.some(lang => voice.lang.startsWith(lang))
+        );
+        const seed = Array.from(name).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+        utterance.voice = newVoices[seed % newVoices.length];
+        utterance.lang = utterance.voice.lang;
+        speechSynthesis.speak(utterance);
+      };
     }
   }
 }
+
+const speechManager = new SpeechManager();
+export const speak = (name: string, text: string) => speechManager.speak(name, text);
+export const initializeVoices = () => speechManager.initializeVoices();

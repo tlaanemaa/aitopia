@@ -22,10 +22,10 @@ export async function nextTurn(userInput?: string, iteration = 0) {
             modelName,
         });
 
-        llmResponse.characterActions.forEach((action) => {
-            setCharacter(action);
+        for (const action of llmResponse.characterActions) {
+            await setCharacter(action);
             console.log("Action:", action);
-        });
+        }
 
 
         if (llmResponse.goAgain && iteration < 10) await nextTurn(undefined, iteration + 1);

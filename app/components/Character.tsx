@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Character as CharacterModel } from "@/store/gameStore";
 import { useEffect, useState } from "react";
+import TypeWriter from "./TypeWriter";
 
 export default function Character({
   character,
@@ -18,7 +19,7 @@ export default function Character({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const margin = 100;
+  const margin = 150;
   const characterHeight = 64;
   const characterWidth = 64;
   const offsetX =
@@ -52,12 +53,12 @@ export default function Character({
           <div className="absolute bottom-full flex flex-col text-sm p-1 w-[300px] rounded-md items-center space-y-2 bg-opacity-20 bg-black">
             {character.thought && (
               <div className="opacity-70 text-white text-ellipsis text-center">
-                {`💭 ${character.thought}`}
+                💭 <TypeWriter text={character.thought} speed={50} />
               </div>
             )}
             {character.speech && (
               <div className="text-white text-ellipsis text-center">
-                {`💬 ${character.speech}`}
+                💬 <TypeWriter text={character.speech} speed={50} />
               </div>
             )}
           </div>
