@@ -2,10 +2,8 @@
 
 import { ChatOllama } from "@langchain/ollama";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import type { Character } from "@/store/gameStore";
-import { characterPatchSchema } from "@/store/gameStore";
+import { Character, characterPatchSchema } from "@/store/gameStore";
 import { z } from "zod";
-import { useSettingsStore } from '@/store/settingsStore';
 
 const SYSTEM_PROMPT = `
 You are the game master, controlling characters in the story. You can move characters, make them speak, and have them think. 
@@ -35,44 +33,34 @@ const promptTemplate = ChatPromptTemplate.fromMessages([
     ["user", TASK_PROMPT.trim()],
 ])
 
-const model = new ChatOllama({
-    baseUrl: "http://192.168.1.29:11434",
-    model: "llama3.2:3b",
-});
-
 const responseFormat = z.object({
     characterActions: z.array(characterPatchSchema, { description: "The actions you want to take with characters this turn" }),
     goAgain: z.boolean({ description: "Whether you want to take another turn" }),
 });
 
+type CallParams = {
+    characters: Character[];
+    actionLog: string[];
+    endpoint: string;
+    modelName: string;
+}
+
 /**
  * Prompts the LLM to take their turn in the game
  */
-export async function promptLLM(characters: Character[], actionLog: string[]) {
-    const settings = useSettingsStore.getState();
-    
-    try {
-        const structuredLlm = model.withStructuredOutput(responseFormat);
-        const prompt = await promptTemplate.invoke({
-            STATE: JSON.stringify(characters, null, 2),
-            ACTION_LOG: actionLog.slice(-50).map(x => `- ${x}`).join("\n"),
-        });
-        console.log("Prompting LLM:", prompt.toString());
-        const response = await fetch(`${settings.endpoint}/generate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: settings.modelName,
-                prompt: prompt.toString(),
-                stream: false,
-            }),
-        });
-        console.log("LLM response:", response);
-        return response;
-    } catch (error) {
-        console.error("Error prompting LLM:", error);
-        return null;
-    }
+export async function promptLLM({ characters, actionLog, endpoint, modelName }: CallParams) {
+    const model = new ChatOllama({
+        baseUrl: endpoint,
+        model: modelName,
+    });
+
+    const structuredLlm = model.withStructuredOutput(responseFormat);
+    const prompt = await promptTemplate.invoke({
+        STATE: JSON.stringify(characters, null, 2),
+        ACTION_LOG: actionLog.slice(-50).map(x => `- ${x}`).join("\n"),
+    });
+    console.log("Prompting LLM:", prompt.toString());
+    const response = await structuredLlm.invoke(prompt);
+    console.log("LLM response:", response);
+    return response;
 }

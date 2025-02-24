@@ -32,7 +32,7 @@ export default function Character({
 
   return (
     <div
-      className="fixed top-0 left-0 transition-transform duration-2000"
+      className="fixed top-0 left-0 transition-transform duration-[2000ms]"
       style={{
         transform: `translate(${offsetX}px, ${offsetY}px)`,
       }}

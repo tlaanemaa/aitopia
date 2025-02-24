@@ -53,3 +53,5 @@ export const useSettingsStore = create<SettingsState>()(
     }
   )
 );
+
+export const getSettings = () => useSettingsStore.getState();

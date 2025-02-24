@@ -1,6 +1,7 @@
 "use client";
 
 import { getStore } from "@/store/gameStore";
+import { getSettings } from "@/store/settingsStore";
 import { promptLLM } from "./promptLLM";
 
 export async function nextTurn(userInput?: string, iteration = 0) {
@@ -12,10 +13,14 @@ export async function nextTurn(userInput?: string, iteration = 0) {
         setLoading(true);
         addTurn();
 
-        const llmResponse = await promptLLM(
-            Object.values(characters),
-            actionLog
-        );
+        const { endpoint, modelName } = getSettings();
+
+        const llmResponse = await promptLLM({
+            characters: Object.values(characters),
+            actionLog,
+            endpoint,
+            modelName,
+        });
 
         llmResponse.characterActions.forEach((action) => {
             setCharacter(action);
