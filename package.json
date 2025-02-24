@@ -12,6 +12,7 @@
     "@langchain/core": "^0.3.40",
     "@langchain/ollama": "^0.2.0",
     "@langchain/openai": "^0.4.4",
+    "framer-motion": "^12.4.7",
     "lucide-react": "^0.475.0",
     "next": "15.1.7",
     "react": "^19.0.0",
