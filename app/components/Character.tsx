@@ -2,6 +2,23 @@ import Image from "next/image";
 import { Character as CharacterModel } from "@/store/gameStore";
 import { useEffect, useState } from "react";
 import TypeWriter from "./TypeWriter";
+import { pickFromArray } from "@/app/utils/hash";
+
+// Add available character images
+const CHARACTER_IMAGES = [
+  "/among_us.webp",
+  "/green.png",
+  "/yellow.png",
+  "/donut.gif",
+  "/cat.gif",
+  "/banana_hi.gif",
+  "/broccoli.gif",
+] as const;
+
+// Helper to get consistent image for a character
+function getCharacterImage(name: string): string {
+  return pickFromArray(CHARACTER_IMAGES, name);
+}
 
 export default function Character({
   character,
@@ -40,13 +57,13 @@ export default function Character({
     >
       <div className="relative flex flex-col items-center">
         <Image
-          src="/among_us.webp"
+          src={getCharacterImage(character.name)}
           alt={character.name}
           width={characterWidth}
           height={characterHeight}
           className="w-16 h-16 rounded-full z-10"
         />
-        <div className="absolute -bottom-5 p-1 rounded-md text-center text-lg font-semibold bg-opacity-20 bg-black whitespace-pre">
+        <div className="absolute -bottom-7 p-1 rounded-md text-center text-lg font-semibold bg-opacity-20 bg-black whitespace-pre">
           {character.name}
         </div>
         {(character.thought || character.speech) && (

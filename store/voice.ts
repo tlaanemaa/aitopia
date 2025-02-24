@@ -1,3 +1,5 @@
+import { pickFromArray } from "@/app/utils/hash";
+
 const window = globalThis.window as Window;
 window?.speechSynthesis?.cancel();
 
@@ -62,17 +64,15 @@ class SpeechManager {
     );
 
     if (voices.length > 0) {
-      const seed = Array.from(name).reduce((sum, char) => sum + char.charCodeAt(0), 0);
-      utterance.voice = voices[seed % voices.length];
-      utterance.lang = utterance.voice.lang; // Match the language to the voice
+      utterance.voice = pickFromArray(voices, name);
+      utterance.lang = utterance.voice.lang;
       speechSynthesis.speak(utterance);
     } else {
       speechSynthesis.onvoiceschanged = () => {
         const newVoices = speechSynthesis.getVoices().filter(voice => 
           SUPPORTED_LANGUAGES.some(lang => voice.lang.startsWith(lang))
         );
-        const seed = Array.from(name).reduce((sum, char) => sum + char.charCodeAt(0), 0);
-        utterance.voice = newVoices[seed % newVoices.length];
+        utterance.voice = pickFromArray(newVoices, name);
         utterance.lang = utterance.voice.lang;
         speechSynthesis.speak(utterance);
       };

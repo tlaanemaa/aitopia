@@ -28,7 +28,7 @@ export async function nextTurn(userInput?: string, iteration = 0) {
         }
 
 
-        if (llmResponse.goAgain && iteration < 10) await nextTurn(undefined, iteration + 1);
+        if (llmResponse.goAgain && iteration < 5) await nextTurn(undefined, iteration + 1);
     } catch (error) {
         addLog(String(error));
     } finally {
