@@ -46,6 +46,49 @@ interface GameState {
   setUserInput: (input: string) => void;
 }
 
+const CHAR_SIZE = 16; // Size in percentage of screen
+const MIN_DISTANCE = CHAR_SIZE * 1.5; // Minimum distance between characters
+
+function getDistance(x1: number, y1: number, x2: number, y2: number) {
+  return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}
+
+function findSafePosition(
+  targetX: number,
+  targetY: number,
+  existingCharacters: Character[],
+  attempts = 8
+): [number, number] {
+  // If no collision, return original position
+  if (!existingCharacters.some(char => 
+    getDistance(targetX, targetY, char.positionX, char.positionY) < MIN_DISTANCE
+  )) {
+    return [targetX, targetY];
+  }
+
+  // Try positions in a growing circle
+  for (let i = 1; i <= attempts; i++) {
+    const radius = MIN_DISTANCE * i / 2;
+    for (let angle = 0; angle < 360; angle += 45) {
+      const radian = (angle * Math.PI) / 180;
+      const newX = Math.max(0, Math.min(100, targetX + radius * Math.cos(radian)));
+      const newY = Math.max(0, Math.min(100, targetY + radius * Math.sin(radian)));
+
+      if (!existingCharacters.some(char =>
+        getDistance(newX, newY, char.positionX, char.positionY) < MIN_DISTANCE
+      )) {
+        return [newX, newY];
+      }
+    }
+  }
+
+  // If no safe position found, return original but clamped to bounds
+  return [
+    Math.max(0, Math.min(100, targetX)),
+    Math.max(0, Math.min(100, targetY))
+  ];
+}
+
 export const useGameStore = create<GameState>()(
   immer((set) => ({
     turn: 0,
@@ -86,6 +129,20 @@ export const useGameStore = create<GameState>()(
             positionX: 0,
             positionY: 0,
           });
+        }
+
+        // If position is being updated, check for collisions
+        if (parsedPatch.positionX != null || parsedPatch.positionY != null) {
+          const targetX = parsedPatch.positionX ?? state.characters[parsedPatch.name].positionX;
+          const targetY = parsedPatch.positionY ?? state.characters[parsedPatch.name].positionY;
+          
+          const otherCharacters = Object.values(state.characters).filter(
+            c => c.name !== parsedPatch.name
+          );
+
+          const [safeX, safeY] = findSafePosition(targetX, targetY, otherCharacters);
+          parsedPatch.positionX = safeX;
+          parsedPatch.positionY = safeY;
         }
 
         // Apply the patch

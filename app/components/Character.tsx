@@ -53,12 +53,12 @@ export default function Character({
           <div className="absolute bottom-full flex flex-col text-sm p-1 w-[300px] rounded-md items-center space-y-2 bg-opacity-20 bg-black">
             {character.thought && (
               <div className="opacity-70 text-white text-ellipsis text-center">
-                💭 <TypeWriter text={character.thought} speed={50} />
+                💭 <TypeWriter text={character.thought} speed={30} />
               </div>
             )}
             {character.speech && (
               <div className="text-white text-ellipsis text-center">
-                💬 <TypeWriter text={character.speech} speed={50} />
+                💬 <TypeWriter text={character.speech} speed={30} />
               </div>
             )}
           </div>

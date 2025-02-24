@@ -3,8 +3,7 @@ window?.speechSynthesis?.cancel();
 
 const SUPPORTED_LANGUAGES = [
   'en', // English
-  'fr', // French
-  // Easy to add more:
+  // 'fr', // French
   // 'de', // German
   // 'es', // Spanish
   // 'it', // Italian
