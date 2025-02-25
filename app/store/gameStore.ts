@@ -53,6 +53,13 @@ function getFuzzyPosition(): { positionX: number; positionY: number } {
   };
 }
 
+/**
+ * Rounds a number to 4 decimal places
+ */
+export function roundToFourDecimals(num: number): number {
+  return Math.round(num * 10000) / 10000;
+}
+
 // State interface
 interface GameState {
   // Game state
@@ -142,8 +149,9 @@ export const useGameStore = create<GameState>()(
             otherCharacters
           );
 
-          updatedCharacter.positionX = safeX;
-          updatedCharacter.positionY = safeY;
+          // Apply rounding to the safe positions
+          updatedCharacter.positionX = roundToFourDecimals(safeX);
+          updatedCharacter.positionY = roundToFourDecimals(safeY);
         }
 
         // Save character

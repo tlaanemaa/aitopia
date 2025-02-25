@@ -7,7 +7,8 @@ import { z } from "zod";
 
 const SYSTEM_PROMPT = `
 You are the game master, controlling characters in the story. You can move characters, make them speak, and have them think. 
-Try not to repeat yourself. To add a character, simply assign them an action.
+To add a character, simply assign them an action.
+Do not repeat previous actions!
 `;
 
 const TASK_PROMPT = `
@@ -22,6 +23,7 @@ Recent actions taken:
 </action_log>
 
 Please return the list of characters and actions you want them to take.
+Do not repeat previous actions!
 `;
 
 const promptTemplate = ChatPromptTemplate.fromMessages([

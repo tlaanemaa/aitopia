@@ -72,7 +72,6 @@ export default function Character({
           alt={character.name}
           width={CHARACTER_WIDTH}
           height={CHARACTER_HEIGHT}
-          className="w-16 h-16 rounded-full z-10"
         />
         <div className="absolute -bottom-7 p-1 rounded-md text-center text-lg font-semibold bg-opacity-20 bg-black whitespace-pre">
           {character.name}
