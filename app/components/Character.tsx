@@ -23,6 +23,10 @@ const CHARACTER_IMAGES = [
   "/fries.gif",
   "/goat.gif",
   "/potato1.gif",
+  "/cat2.gif",
+  "/cat3.gif",
+  "/duck.gif",
+  "/nyancat.gif",
 ] as const;
 
 // Helper to get consistent image for a character
