@@ -6,54 +6,32 @@ import { Character, characterPatchSchema } from "../store/gameStore";
 import { z } from "zod";
 
 const SYSTEM_PROMPT = `
-### **Game Master Instructions**  
-
-As the **Game Master**, you control the **narrative and all characters** within the story world. Your role includes:  
-
-- **Moving characters** to different locations.  
-- **Making characters speak** or think aloud.  
-- **Introducing new characters** by assigning them actions or roles.  
-
-When positioning characters, ensure they are not on top of each other.
-`;
-
-const STATE_PROMPT = `
-### **Reference Information**  
-\`\`\`json
-{STATE}
-\`\`\`
-
-2. **Action Log** – A record of recent events and character actions.  
-\`\`\`plaintext
-{ACTION_LOG}
-\`\`\`
-
-Use these logs to maintain continuity and avoid repeating actions.
+You are the game master, controlling characters in the story. You can move characters, make them speak, and have them think. 
+Try not to repeat yourself. To add a character, simply assign them an action.
 `;
 
 const TASK_PROMPT = `
-### **Your Role: Driving the Story Forward**  
+Current character states in the game:
+<game_state>
+{STATE}
+</game_state>
 
-As the Game Master, you have full control over shaping the narrative. Keep the momentum going by:  
+Recent actions taken:
+<action_log>
+{ACTION_LOG}
+</action_log>
 
-- **Moving characters** to relevant locations.  
-- **Making them speak or think aloud** to reveal their perspectives.  
-- **Introducing new characters** naturally within the story.  
-- **Taking multiple actions** to create dynamic and engaging scenes.  
-
-Stay imaginative, respect character motives, and build on past events. **Do not repeat previous actions.**  
-Now, what happens next? 
+Please return the list of characters and actions you want them to take.
 `;
 
 const promptTemplate = ChatPromptTemplate.fromMessages([
   ["system", SYSTEM_PROMPT.trim()],
-  ["user", STATE_PROMPT.trim()],
   ["user", TASK_PROMPT.trim()],
 ]);
 
 const responseFormat = z.object({
   characterActions: z.array(characterPatchSchema, {
-    description: "The actions you want to take with characters this turn",
+    description: "The list of characters and actions you want them to take",
   }),
   goAgain: z.boolean({ description: "Whether you want to take another turn" }),
 });

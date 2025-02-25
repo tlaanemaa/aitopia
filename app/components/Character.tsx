@@ -1,7 +1,9 @@
 import Image from "next/image";
 import {
   Character as CharacterModel,
-  CHARACTER_SIZE_PX,
+  CHARACTER_HEIGHT,
+  CHARACTER_WIDTH,
+  SCREEN_MARGIN,
 } from "../store/gameStore";
 import { useEffect, useState } from "react";
 import TypeWriter from "./TypeWriter";
@@ -39,17 +41,14 @@ export default function Character({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const margin = 150;
-  const characterHeight = CHARACTER_SIZE_PX;
-  const characterWidth = CHARACTER_SIZE_PX;
   const offsetX =
-    (character.positionX / 100) * (screenWidth - 2 * margin) +
-    margin -
-    characterWidth;
+    (character.positionX / 100) * (screenWidth - 2 * SCREEN_MARGIN) +
+    SCREEN_MARGIN -
+    CHARACTER_WIDTH;
   const offsetY =
-    (character.positionY / 100) * (screenHeight - 2 * margin) +
-    margin -
-    characterHeight;
+    (character.positionY / 100) * (screenHeight - 2 * SCREEN_MARGIN) +
+    SCREEN_MARGIN -
+    CHARACTER_HEIGHT;
 
   return (
     <div
@@ -62,8 +61,8 @@ export default function Character({
         <Image
           src={getCharacterImage(character.name)}
           alt={character.name}
-          width={characterWidth}
-          height={characterHeight}
+          width={CHARACTER_WIDTH}
+          height={CHARACTER_HEIGHT}
           className="w-16 h-16 rounded-full z-10"
         />
         <div className="absolute -bottom-7 p-1 rounded-md text-center text-lg font-semibold bg-opacity-20 bg-black whitespace-pre">

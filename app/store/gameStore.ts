@@ -2,234 +2,170 @@ import { z } from "zod";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { speak } from "./voice";
-import { collider } from "../utils/collider";
+import { findSafePosition } from "../utils/findSafePosition";
 
-const toLog = (message: string) => {
-  const ts = new Date().toLocaleTimeString();
-  return `[${ts}] ${message}`;
-};
+// Constants
+export const CHARACTER_WIDTH = 64;
+export const CHARACTER_HEIGHT = 64;
+export const SCREEN_MARGIN = 100;
 
+// Schema definitions
 export const characterSchema = z.object({
-  name: z.string({
-    description: 'The name of the character, for example "Bob"',
-  }),
-  speech: z.string({ description: "The last thing the character said" }),
-  thought: z.string({ description: "The last thing the character thought" }),
-  positionX: z.number({
-    description:
-      "The x coordinate of the character. From 0 to 100 where 50 is the middle of the screen",
-  }),
-  positionY: z.number({
-    description:
-      "The y coordinate of the character. From 0 to 100 where 50 is the middle of the screen",
-  }),
+  name: z
+    .string({ description: 'The name of the character, for example "Bob"' })
+    .min(1, "Name is required"),
+  speech: z
+    .string({ description: "What the character will say next" })
+    .default(""),
+  thought: z
+    .string({ description: "What the character will think next" })
+    .default(""),
+  positionX: z
+    .number({ description: "Where the character will go on the X axis" })
+    .transform((val) => Math.max(0, Math.min(100, val)))
+    .default(50),
+  positionY: z
+    .number({ description: "Where the character will go on the Y axis" })
+    .transform((val) => Math.max(0, Math.min(100, val)))
+    .default(50),
 });
 
 export type Character = z.infer<typeof characterSchema>;
+
 export const characterPatchSchema = characterSchema.partial({
   speech: true,
   thought: true,
   positionX: true,
   positionY: true,
 });
+
 export type CharacterPatch = z.infer<typeof characterPatchSchema>;
 
+// Helper functions
+const formatLogMessage = (message: string): string => {
+  const timestamp = new Date().toLocaleTimeString();
+  return `[${timestamp}] ${message}`;
+};
+
+// State interface
 interface GameState {
+  // Game state
   turn: number;
-  addTurn: () => void;
   loading: boolean;
-  setLoading: (loading: boolean) => void;
-  characters: Record<Character["name"], Character>;
-  setCharacter: (patch: CharacterPatch) => Promise<void>;
+  characters: Record<string, Character>;
   actionLog: string[];
+
+  // Actions
+  addTurn: () => void;
+  setLoading: (loading: boolean) => void;
+  setCharacter: (patch: CharacterPatch) => Promise<void>;
   addLog: (message: string) => void;
-  userInput: string;
-  setUserInput: (input: string) => void;
 }
 
-export const CHARACTER_SIZE_PX = 64; // Character size in pixels
-const MIN_MARGIN_PX = 150; // Minimum distance between characters
-
-function getCharacterSizePercentage(): { width: number; height: number } {
-  if (typeof window === "undefined") {
-    return { width: 10, height: 10 }; // Fallback for SSR
-  }
-
-  const screenWidth = window.innerWidth - 2 * MIN_MARGIN_PX;
-  const screenHeight = window.innerHeight - 2 * MIN_MARGIN_PX;
-
-  return {
-    width: (CHARACTER_SIZE_PX / screenWidth) * 100,
-    height: (CHARACTER_SIZE_PX / screenHeight) * 100,
-  };
-}
-
-function getDistance(x1: number, y1: number, x2: number, y2: number) {
-  return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-}
-
-function findSafePosition(
-  targetX: number,
-  targetY: number,
-  existingCharacters: Character[],
-): [number, number] {
-  const { width, height } = getCharacterSizePercentage();
-  
-  // Convert margin to percentage of screen
-  const marginWidth = (MIN_MARGIN_PX / (window.innerWidth - 2 * MIN_MARGIN_PX)) * 100;
-  const marginHeight = (MIN_MARGIN_PX / (window.innerHeight - 2 * MIN_MARGIN_PX)) * 100;
-  const minDistance = Math.max(marginWidth, marginHeight);
-
-  // Find closest character and distance
-  let closestDist = Infinity;
-  let closestVector = [0, 0];
-  
-  for (const char of existingCharacters) {
-    const dx = targetX - char.positionX;
-    const dy = targetY - char.positionY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-
-    if (dist < closestDist) {
-      closestDist = dist;
-      closestVector = [dx, dy];
-    }
-  }
-
-  // If no collision or no characters, return original position clamped by character size
-  if (closestDist >= minDistance || existingCharacters.length === 0) {
-    return [
-      Math.max(width, Math.min(100 - width, targetX)),
-      Math.max(height, Math.min(100 - height, targetY))
-    ];
-  }
-
-  // If perfect overlap, generate random vector
-  if (closestDist === 0) {
-    const angle = Math.random() * Math.PI * 2;
-    closestVector = [Math.cos(angle), Math.sin(angle)];
-  } else {
-    // Normalize vector
-    const magnitude = Math.sqrt(closestVector[0] * closestVector[0] + closestVector[1] * closestVector[1]);
-    closestVector = [closestVector[0] / magnitude, closestVector[1] / magnitude];
-  }
-
-  // Move along vector until safe distance is reached
-  const newX = targetX + closestVector[0] * (minDistance - closestDist);
-  const newY = targetY + closestVector[1] * (minDistance - closestDist);
-
-  // Clamp to screen bounds based on character size
-  return [
-    Math.max(width, Math.min(100 - width, newX)),
-    Math.max(height, Math.min(100 - height, newY))
-  ];
-}
-
+// Create store
 export const useGameStore = create<GameState>()(
   immer((set) => ({
+    // Initial state
     turn: 0,
+    loading: false,
+    characters: {},
+    actionLog: [],
+
+    // Actions
     addTurn: () => set((state) => ({ turn: state.turn + 1 })),
 
-    loading: false,
     setLoading: (loading: boolean) => set({ loading }),
 
-    characters: {
-      // "Zorg": characterSchema.parse({ name: "Zorg", speech: "I am Zorg", thought: "I am Zorg, I think.", positionX: 20, positionY: 20 }),
-    },
-    setCharacter: (patch: CharacterPatch) => {
-      // Parse the patch
-      const parsedPatch = characterPatchSchema.parse(patch);
-      parsedPatch.name = parsedPatch.name.trim() || "Unknown";
-      parsedPatch.positionX = Math.max(
-        0,
-        Math.min(100, parsedPatch.positionX ?? 50)
-      );
-      parsedPatch.positionY = Math.max(
-        0,
-        Math.min(100, parsedPatch.positionY ?? 50)
-      );
-
-      // Update state first
+    addLog: (message: string) =>
       set((state) => {
-        // Get or create character
-        if (state.characters[parsedPatch.name] == null) {
+        state.actionLog.push(formatLogMessage(message));
+      }),
+
+    setCharacter: async (patch: CharacterPatch) => {
+      // Normalize and validate the patch
+      const normalizedPatch = {
+        ...patch,
+        name: patch.name?.trim() || "Unknown",
+      };
+
+      // Remove empty strings
+      if (!normalizedPatch.speech?.trim()) delete normalizedPatch.speech;
+      if (!normalizedPatch.thought?.trim()) delete normalizedPatch.thought;
+
+      // Update state
+      set((state) => {
+        const characterName = normalizedPatch.name;
+
+        // Log new character creation
+        if (!state.characters[characterName]) {
           state.actionLog.push(
-            toLog(
-              `A new character named "${parsedPatch.name}" has entered the story`
+            formatLogMessage(
+              `A new character named "${characterName}" has entered the story`
             )
           );
-          state.characters[parsedPatch.name] = characterSchema.parse({
-            name: parsedPatch.name,
-            speech: "",
-            thought: "",
-            positionX: 0,
-            positionY: 0,
-          });
         }
 
-        // If position is being updated, check for collisions
-        if (parsedPatch.positionX != null || parsedPatch.positionY != null) {
-          const targetX =
-            parsedPatch.positionX ??
-            state.characters[parsedPatch.name].positionX;
-          const targetY =
-            parsedPatch.positionY ??
-            state.characters[parsedPatch.name].positionY;
+        // Create or update character
+        const updatedCharacter = characterSchema.parse({
+          ...state.characters[characterName],
+          ...normalizedPatch,
+        });
 
+        // Handle collision avoidance
+        if (
+          normalizedPatch.positionX != null ||
+          normalizedPatch.positionY != null
+        ) {
           const otherCharacters = Object.values(state.characters).filter(
-            (c) => c.name !== parsedPatch.name
+            (c) => c.name !== characterName
           );
 
-          const [safeX, safeY] = collider.findSafePosition(
-            targetX,
-            targetY,
+          const [safeX, safeY] = findSafePosition(
+            updatedCharacter.positionX,
+            updatedCharacter.positionY,
             otherCharacters
           );
-          parsedPatch.positionX = safeX;
-          parsedPatch.positionY = safeY;
+
+          updatedCharacter.positionX = safeX;
+          updatedCharacter.positionY = safeY;
         }
 
-        // Apply the patch
-        if (!parsedPatch.speech?.trim()) delete parsedPatch.speech;
-        if (!parsedPatch.thought?.trim()) delete parsedPatch.thought;
-        state.characters[parsedPatch.name] = {
-          ...state.characters[parsedPatch.name],
-          ...parsedPatch,
-        };
+        // Save character
+        state.characters[characterName] = updatedCharacter;
 
-        // Add log entries
-        if (parsedPatch.speech)
+        // Log changes
+        if (normalizedPatch.speech) {
           state.actionLog.push(
-            toLog(`${parsedPatch.name} said: ${parsedPatch.speech}`)
+            formatLogMessage(`${characterName} said: ${normalizedPatch.speech}`)
           );
-        if (parsedPatch.thought)
+        }
+
+        if (normalizedPatch.thought) {
           state.actionLog.push(
-            toLog(`${parsedPatch.name} thought: ${parsedPatch.thought}`)
+            formatLogMessage(
+              `${characterName} thought: ${normalizedPatch.thought}`
+            )
           );
-        if (parsedPatch.positionX != null || parsedPatch.positionY != null) {
+        }
+
+        if (
+          normalizedPatch.positionX != null ||
+          normalizedPatch.positionY != null
+        ) {
           state.actionLog.push(
-            toLog(
-              `${parsedPatch.name} moved to x=${parsedPatch.positionX}, y=${parsedPatch.positionY}`
+            formatLogMessage(
+              `${characterName} moved to x=${updatedCharacter.positionX}, y=${updatedCharacter.positionY}`
             )
           );
         }
       });
 
-      // Return the speech promise (or a resolved promise if no speech)
-      return parsedPatch.speech
-        ? speak(parsedPatch.name, parsedPatch.speech)
-        : Promise.resolve();
+      if (normalizedPatch.speech) {
+        await speak(normalizedPatch.name, normalizedPatch.speech);
+      }
     },
-
-    actionLog: [],
-    addLog: (message: string) =>
-      set((state) => {
-        state.actionLog.push(toLog(message));
-      }),
-
-    userInput: "",
-    setUserInput: (input: string) => set({ userInput: input }),
   }))
 );
 
-export default useGameStore;
+// Export convenience accessor
 export const getStore = () => useGameStore.getState();
