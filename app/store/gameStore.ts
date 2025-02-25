@@ -11,7 +11,7 @@ export const SCREEN_MARGIN = 100;
 
 // Schema definitions
 export const characterSchema = z.object({
-  name: z
+  characterName: z
     .string({ description: 'The name of the character, for example "Bob"' })
     .min(1, "Name is required"),
   speech: z
@@ -21,10 +21,10 @@ export const characterSchema = z.object({
     .string({ description: "What the character will think next" })
     .default(""),
   positionX: z
-    .number({ description: "Where the character will go on the X axis" })
+    .number({ description: "Where the character will go on the X axis. Between 0 and 100." })
     .transform((val) => Math.max(0, Math.min(100, val))),
   positionY: z
-    .number({ description: "Where the character will go on the Y axis" })
+    .number({ description: "Where the character will go on the Y axis Between 0 and 100." })
     .transform((val) => Math.max(0, Math.min(100, val))),
 });
 
@@ -98,7 +98,7 @@ export const useGameStore = create<GameState>()(
       // Normalize and validate the patch
       const normalizedPatch = {
         ...patch,
-        name: patch.name?.trim() || "Unknown",
+        characterName: patch.characterName?.trim() || "Unknown",
       };
 
       // Remove empty strings
@@ -107,7 +107,7 @@ export const useGameStore = create<GameState>()(
 
       // Update state
       set((state) => {
-        const characterName = normalizedPatch.name;
+        const characterName = normalizedPatch.characterName;
 
         // Log new character creation
         if (!state.characters[characterName]) {
@@ -140,7 +140,7 @@ export const useGameStore = create<GameState>()(
           normalizedPatch.positionY != null
         ) {
           const otherCharacters = Object.values(state.characters).filter(
-            (c) => c.name !== characterName
+            (c) => c.characterName !== characterName
           );
 
           const [safeX, safeY] = findSafePosition(
@@ -185,7 +185,7 @@ export const useGameStore = create<GameState>()(
       });
 
       if (normalizedPatch.speech) {
-        await speak(normalizedPatch.name, normalizedPatch.speech);
+        await speak(normalizedPatch.characterName, normalizedPatch.speech);
       }
     },
   }))

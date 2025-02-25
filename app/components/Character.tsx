@@ -68,13 +68,13 @@ export default function Character({
     >
       <div className="relative flex flex-col items-center">
         <Image
-          src={getCharacterImage(character.name)}
-          alt={character.name}
+          src={getCharacterImage(character.characterName)}
+          alt={character.characterName}
           width={CHARACTER_WIDTH}
           height={CHARACTER_HEIGHT}
         />
         <div className="absolute -bottom-7 p-1 rounded-md text-center text-lg font-semibold bg-opacity-20 bg-black whitespace-pre">
-          {character.name}
+          {character.characterName}
         </div>
         {(character.thought || character.speech) && (
           <div className="absolute bottom-full flex flex-col text-sm p-1 w-[300px] rounded-md items-center space-y-2 bg-opacity-20 bg-black">

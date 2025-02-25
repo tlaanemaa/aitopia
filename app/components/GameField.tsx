@@ -8,7 +8,7 @@ export default function GameField() {
   return (
     <div className="top-0 left-0 right-0 bottom-0 fixed">
       {Object.values(characters).map((character) => (
-        <Character key={character.name} character={character} />
+        <Character key={character.characterName} character={character} />
       ))}
     </div>
   );

@@ -27,6 +27,8 @@ jobs:
         run: npm ci
       - name: Lint
         run: npm run lint
+      - name: Check types
+        run: npm run check-types
   build-and-push-image:
     needs: check-codebase
     runs-on: ubuntu-latest
