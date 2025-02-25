@@ -7,17 +7,17 @@ export function hashString(str: string, range?: number): number {
   // Using djb2 hash algorithm
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash = (hash << 5) + hash + str.charCodeAt(i);
     hash = hash & hash; // Convert to 32-bit integer
   }
-  
+
   hash = Math.abs(hash);
-  
+
   // If range is provided, constrain the hash to that range
   if (range !== undefined) {
     return hash % range;
   }
-  
+
   return hash;
 }
 
@@ -28,4 +28,4 @@ export function hashString(str: string, range?: number): number {
  */
 export function pickFromArray<T>(arr: readonly T[], seed: string): T {
   return arr[hashString(seed, arr.length)];
-} 
+}

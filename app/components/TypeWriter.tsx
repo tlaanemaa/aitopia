@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 interface TypeWriterProps {
   text: string;
-  speed?: number;  // milliseconds per character
+  speed?: number; // milliseconds per character
   className?: string;
   onComplete?: () => void;
 }
 
-export default function TypeWriter({ 
-  text, 
-  speed = 50, 
-  className = "", 
-  onComplete 
+export default function TypeWriter({
+  text,
+  speed = 50,
+  className = "",
+  onComplete,
 }: TypeWriterProps) {
-  const [displayedText, setDisplayedText] = useState('');
+  const [displayedText, setDisplayedText] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function TypeWriter({
 
     const timer = setTimeout(() => {
       setDisplayedText(text.slice(0, currentIndex + 1));
-      setCurrentIndex(i => i + 1);
+      setCurrentIndex((i) => i + 1);
     }, speed);
 
     return () => clearTimeout(timer);
@@ -34,13 +34,9 @@ export default function TypeWriter({
 
   // Reset when text changes
   useEffect(() => {
-    setDisplayedText('');
+    setDisplayedText("");
     setCurrentIndex(0);
   }, [text]);
 
-  return (
-    <span className={className}>
-      {displayedText}
-    </span>
-  );
-} 
+  return <span className={className}>{displayedText}</span>;
+}

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { Settings2 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useSettingsStore } from '../store/settingsStore';
+import { Settings2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { useSettingsStore } from "../store/settingsStore";
 
 export default function SettingsButton() {
-  const toggleSettings = useSettingsStore(state => state.toggleSettings);
+  const toggleSettings = useSettingsStore((state) => state.toggleSettings);
 
   return (
     <motion.button
@@ -20,4 +20,4 @@ export default function SettingsButton() {
       <Settings2 className="w-5 h-5 text-foreground" />
     </motion.button>
   );
-} 
+}
