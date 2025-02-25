@@ -15,15 +15,44 @@ A dynamic, AI-powered game world where characters come to life through LLM inter
 
 Before running Aitopia, you need:
 
-1. [Ollama](https://ollama.com/) installed and running on your machine
-2. A compatible LLM model pulled into Ollama (e.g., `llama2:3b`)
+1. [Ollama](https://ollama.ai/) installed and running on your machine
+2. A compatible LLM model pulled into Ollama, e.g.:
 
-## Getting Started
+```bash
+ollama pull llama3.2:3b
+```
+
+3. Ollama configured to [accept requests](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-can-i-allow-additional-web-origins-to-access-ollama) from Aitopia:
+
+```bash
+OLLAMA_ORIGINS=http://localhost:3000 ollama serve
+```
+
+## Running
+
+The easiest way to run Aitopia is using Docker:
+
+```bash
+docker run -p 3000:3000 ghcr.io/tlaanemaa/aitopia:latest
+```
+
+Then open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Configuration
+
+1. Click the settings gear icon in the top right
+2. Configure your Ollama endpoint (default: http://localhost:11434)
+3. Select your preferred model from the available models list
+4. Start interacting with the game!
+
+## Development
+
+To run the project from source:
 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/aitopia.git
+git clone https://github.com/tlaanemaa/aitopia.git
 cd aitopia
 ```
 
@@ -41,13 +70,6 @@ npm run dev
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## Configuration
-
-1. Click the settings gear icon in the top right
-2. Configure your Ollama endpoint (default: http://localhost:11434)
-3. Select your preferred model from the available models list
-4. Start interacting with the game!
-
 ## Usage
 
 - Type instructions in the input box to guide the story
@@ -55,9 +77,7 @@ npm run dev
 - Each character has their own consistent voice and appearance
 - Watch the action log to follow the story progression
 
-## Development
-
-Built with:
+## Built With
 
 - Next.js 14 (App Router)
 - TypeScript
