@@ -1,6 +1,6 @@
 "use client";
 
-import { useGameStore } from "@/store/gameStore";
+import { useGameStore } from "./store/gameStore";
 import ActionLog from "./components/ActionLog";
 import GameField from "./components/GameField";
 import TurnCounter from "./components/TurnCounter";

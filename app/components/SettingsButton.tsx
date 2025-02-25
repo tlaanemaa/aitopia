@@ -2,7 +2,7 @@
 
 import { Settings2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useSettingsStore } from '../store/settingsStore';
 
 export default function SettingsButton() {
   const toggleSettings = useSettingsStore(state => state.toggleSettings);

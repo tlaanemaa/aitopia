@@ -1,6 +1,6 @@
 "use client";
 
-import { useGameStore } from "@/store/gameStore";
+import { useGameStore } from "../store/gameStore";
 import Character from "./Character";
 
 export default function GameField() {

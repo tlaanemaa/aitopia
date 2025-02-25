@@ -2,6 +2,7 @@ import { z } from "zod";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { speak } from "./voice";
+import { collider } from "../utils/collider";
 
 const toLog = (message: string) => {
   const ts = new Date().toLocaleTimeString();
@@ -46,8 +47,22 @@ interface GameState {
   setUserInput: (input: string) => void;
 }
 
-const CHAR_SIZE = 16; // Size in percentage of screen
-const MIN_DISTANCE = CHAR_SIZE * 1.5; // Minimum distance between characters
+export const CHARACTER_SIZE_PX = 64; // Character size in pixels
+const MIN_MARGIN_PX = 150; // Minimum distance between characters
+
+function getCharacterSizePercentage(): { width: number; height: number } {
+  if (typeof window === "undefined") {
+    return { width: 10, height: 10 }; // Fallback for SSR
+  }
+
+  const screenWidth = window.innerWidth - 2 * MIN_MARGIN_PX;
+  const screenHeight = window.innerHeight - 2 * MIN_MARGIN_PX;
+
+  return {
+    width: (CHARACTER_SIZE_PX / screenWidth) * 100,
+    height: (CHARACTER_SIZE_PX / screenHeight) * 100,
+  };
+}
 
 function getDistance(x1: number, y1: number, x2: number, y2: number) {
   return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
@@ -57,35 +72,55 @@ function findSafePosition(
   targetX: number,
   targetY: number,
   existingCharacters: Character[],
-  attempts = 8
 ): [number, number] {
-  // If no collision, return original position
-  if (!existingCharacters.some(char => 
-    getDistance(targetX, targetY, char.positionX, char.positionY) < MIN_DISTANCE
-  )) {
-    return [targetX, targetY];
-  }
+  const { width, height } = getCharacterSizePercentage();
+  
+  // Convert margin to percentage of screen
+  const marginWidth = (MIN_MARGIN_PX / (window.innerWidth - 2 * MIN_MARGIN_PX)) * 100;
+  const marginHeight = (MIN_MARGIN_PX / (window.innerHeight - 2 * MIN_MARGIN_PX)) * 100;
+  const minDistance = Math.max(marginWidth, marginHeight);
 
-  // Try positions in a growing circle
-  for (let i = 1; i <= attempts; i++) {
-    const radius = MIN_DISTANCE * i / 2;
-    for (let angle = 0; angle < 360; angle += 45) {
-      const radian = (angle * Math.PI) / 180;
-      const newX = Math.max(0, Math.min(100, targetX + radius * Math.cos(radian)));
-      const newY = Math.max(0, Math.min(100, targetY + radius * Math.sin(radian)));
+  // Find closest character and distance
+  let closestDist = Infinity;
+  let closestVector = [0, 0];
+  
+  for (const char of existingCharacters) {
+    const dx = targetX - char.positionX;
+    const dy = targetY - char.positionY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
 
-      if (!existingCharacters.some(char =>
-        getDistance(newX, newY, char.positionX, char.positionY) < MIN_DISTANCE
-      )) {
-        return [newX, newY];
-      }
+    if (dist < closestDist) {
+      closestDist = dist;
+      closestVector = [dx, dy];
     }
   }
 
-  // If no safe position found, return original but clamped to bounds
+  // If no collision or no characters, return original position clamped by character size
+  if (closestDist >= minDistance || existingCharacters.length === 0) {
+    return [
+      Math.max(width, Math.min(100 - width, targetX)),
+      Math.max(height, Math.min(100 - height, targetY))
+    ];
+  }
+
+  // If perfect overlap, generate random vector
+  if (closestDist === 0) {
+    const angle = Math.random() * Math.PI * 2;
+    closestVector = [Math.cos(angle), Math.sin(angle)];
+  } else {
+    // Normalize vector
+    const magnitude = Math.sqrt(closestVector[0] * closestVector[0] + closestVector[1] * closestVector[1]);
+    closestVector = [closestVector[0] / magnitude, closestVector[1] / magnitude];
+  }
+
+  // Move along vector until safe distance is reached
+  const newX = targetX + closestVector[0] * (minDistance - closestDist);
+  const newY = targetY + closestVector[1] * (minDistance - closestDist);
+
+  // Clamp to screen bounds based on character size
   return [
-    Math.max(0, Math.min(100, targetX)),
-    Math.max(0, Math.min(100, targetY))
+    Math.max(width, Math.min(100 - width, newX)),
+    Math.max(height, Math.min(100 - height, newY))
   ];
 }
 
@@ -133,14 +168,22 @@ export const useGameStore = create<GameState>()(
 
         // If position is being updated, check for collisions
         if (parsedPatch.positionX != null || parsedPatch.positionY != null) {
-          const targetX = parsedPatch.positionX ?? state.characters[parsedPatch.name].positionX;
-          const targetY = parsedPatch.positionY ?? state.characters[parsedPatch.name].positionY;
-          
+          const targetX =
+            parsedPatch.positionX ??
+            state.characters[parsedPatch.name].positionX;
+          const targetY =
+            parsedPatch.positionY ??
+            state.characters[parsedPatch.name].positionY;
+
           const otherCharacters = Object.values(state.characters).filter(
-            c => c.name !== parsedPatch.name
+            (c) => c.name !== parsedPatch.name
           );
 
-          const [safeX, safeY] = findSafePosition(targetX, targetY, otherCharacters);
+          const [safeX, safeY] = collider.findSafePosition(
+            targetX,
+            targetY,
+            otherCharacters
+          );
           parsedPatch.positionX = safeX;
           parsedPatch.positionY = safeY;
         }

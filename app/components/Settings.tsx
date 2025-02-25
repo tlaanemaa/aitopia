@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useSettingsStore } from '../store/settingsStore';
 
 export default function Settings() {
   const {

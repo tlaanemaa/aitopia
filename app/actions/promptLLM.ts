@@ -2,65 +2,93 @@
 
 import { ChatOllama } from "@langchain/ollama";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { Character, characterPatchSchema } from "@/store/gameStore";
+import { Character, characterPatchSchema } from "../store/gameStore";
 import { z } from "zod";
 
 const SYSTEM_PROMPT = `
-You are the game master, controlling characters in the story. You can move characters, make them speak, and have them think. 
-To add a character, simply assign them an action. 
-Please avoid placing characters on top of each other, as it will hinder visibility.
+### **Game Master Instructions**  
+
+As the **Game Master**, you control the **narrative and all characters** within the story world. Your role includes:  
+
+- **Moving characters** to different locations.  
+- **Making characters speak** or think aloud.  
+- **Introducing new characters** by assigning them actions or roles.  
+
+When positioning characters, ensure they are not on top of each other.
 `;
 
 const STATE_PROMPT = `
-Current character states in the game:
-<game_state>
+### **Reference Information**  
+\`\`\`json
 {STATE}
-</game_state>
+\`\`\`
 
-Recent actions taken:
-<action_log>
+2. **Action Log** – A record of recent events and character actions.  
+\`\`\`plaintext
 {ACTION_LOG}
-</action_log>
+\`\`\`
+
+Use these logs to maintain continuity and avoid repeating actions.
 `;
 
 const TASK_PROMPT = `
-What action do you want to take next?
+### **Your Role: Driving the Story Forward**  
+
+As the Game Master, you have full control over shaping the narrative. Keep the momentum going by:  
+
+- **Moving characters** to relevant locations.  
+- **Making them speak or think aloud** to reveal their perspectives.  
+- **Introducing new characters** naturally within the story.  
+- **Taking multiple actions** to create dynamic and engaging scenes.  
+
+Stay imaginative, respect character motives, and build on past events. **Do not repeat previous actions.**  
+Now, what happens next? 
 `;
 
 const promptTemplate = ChatPromptTemplate.fromMessages([
-    ["system", SYSTEM_PROMPT.trim()],
-    ["user", STATE_PROMPT.trim()],
-    ["user", TASK_PROMPT.trim()],
-])
+  ["system", SYSTEM_PROMPT.trim()],
+  ["user", STATE_PROMPT.trim()],
+  ["user", TASK_PROMPT.trim()],
+]);
 
 const responseFormat = z.object({
-    characterActions: z.array(characterPatchSchema, { description: "The actions you want to take with characters this turn" }),
-    goAgain: z.boolean({ description: "Whether you want to take another turn" }),
+  characterActions: z.array(characterPatchSchema, {
+    description: "The actions you want to take with characters this turn",
+  }),
+  goAgain: z.boolean({ description: "Whether you want to take another turn" }),
 });
 
 type CallParams = {
-    characters: Character[];
-    actionLog: string[];
-    endpoint: string;
-    modelName: string;
-}
+  characters: Character[];
+  actionLog: string[];
+  endpoint: string;
+  modelName: string;
+};
 
 /**
  * Prompts the LLM to take their turn in the game
  */
-export async function promptLLM({ characters, actionLog, endpoint, modelName }: CallParams) {
-    const model = new ChatOllama({
-        baseUrl: endpoint,
-        model: modelName,
-    });
+export async function promptLLM({
+  characters,
+  actionLog,
+  endpoint,
+  modelName,
+}: CallParams) {
+  const model = new ChatOllama({
+    baseUrl: endpoint,
+    model: modelName,
+  });
 
-    const structuredLlm = model.withStructuredOutput(responseFormat);
-    const prompt = await promptTemplate.invoke({
-        STATE: JSON.stringify(characters, null, 2),
-        ACTION_LOG: actionLog.slice(-50).map(x => `- ${x}`).join("\n"),
-    });
-    console.log("Prompting LLM:", prompt.toString());
-    const response = await structuredLlm.invoke(prompt);
-    console.log("LLM response:", response);
-    return response;
+  const structuredLlm = model.withStructuredOutput(responseFormat);
+  const prompt = await promptTemplate.invoke({
+    STATE: JSON.stringify(characters, null, 2),
+    ACTION_LOG: actionLog
+      .slice(-50)
+      .map((x) => `- ${x}`)
+      .join("\n"),
+  });
+  console.log("Prompting LLM:", prompt.toString());
+  const response = await structuredLlm.invoke(prompt);
+  console.log("LLM response:", response);
+  return response;
 }

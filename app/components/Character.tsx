@@ -1,5 +1,8 @@
 import Image from "next/image";
-import { Character as CharacterModel } from "@/store/gameStore";
+import {
+  Character as CharacterModel,
+  CHARACTER_SIZE_PX,
+} from "../store/gameStore";
 import { useEffect, useState } from "react";
 import TypeWriter from "./TypeWriter";
 import { pickFromArray } from "@/app/utils/hash";
@@ -37,8 +40,8 @@ export default function Character({
   }, []);
 
   const margin = 150;
-  const characterHeight = 64;
-  const characterWidth = 64;
+  const characterHeight = CHARACTER_SIZE_PX;
+  const characterWidth = CHARACTER_SIZE_PX;
   const offsetX =
     (character.positionX / 100) * (screenWidth - 2 * margin) +
     margin -

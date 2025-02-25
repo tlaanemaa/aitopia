@@ -1,37 +1,39 @@
 "use client";
 
-import { getStore } from "@/store/gameStore";
-import { getSettings } from "@/store/settingsStore";
+import { getStore } from "../store/gameStore";
+import { getSettings } from "../store/settingsStore";
 import { promptLLM } from "./promptLLM";
 
 export async function nextTurn(userInput?: string, iteration = 0) {
-    const { addLog } = getStore();
-    if (userInput && userInput.trim()) addLog(`The game master added these instructions: ${userInput}`);
-    const { characters, actionLog, setCharacter, addTurn, setLoading } = getStore();
+  const { addLog } = getStore();
+  if (userInput?.trim()) addLog(userInput.trim());
 
-    try {
-        setLoading(true);
-        addTurn();
+  const { characters, actionLog, setCharacter, addTurn, setLoading } =
+    getStore();
 
-        const { endpoint, modelName } = getSettings();
+  try {
+    setLoading(true);
+    addTurn();
 
-        const llmResponse = await promptLLM({
-            characters: Object.values(characters),
-            actionLog,
-            endpoint,
-            modelName,
-        });
+    const { endpoint, modelName } = getSettings();
 
-        for (const action of llmResponse.characterActions) {
-            await setCharacter(action);
-            console.log("Action:", action);
-        }
+    const llmResponse = await promptLLM({
+      characters: Object.values(characters),
+      actionLog,
+      endpoint,
+      modelName,
+    });
 
-
-        if (llmResponse.goAgain && iteration < 5) await nextTurn(undefined, iteration + 1);
-    } catch (error) {
-        addLog(String(error));
-    } finally {
-        setLoading(false);
+    for (const action of llmResponse.characterActions) {
+      await setCharacter(action);
+      console.log("Action:", action);
     }
+
+    if (llmResponse.goAgain && iteration < 3)
+      await nextTurn(undefined, iteration + 1);
+  } catch (error) {
+    addLog(String(error));
+  } finally {
+    setLoading(false);
+  }
 }

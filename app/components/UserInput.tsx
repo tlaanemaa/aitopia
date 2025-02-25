@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useGameStore } from "@/store/gameStore";
+import { useGameStore } from "../store/gameStore";
+import { initializeVoices } from "../store/voice";
 import { nextTurn } from "../actions/nextTurn";
-import { initializeVoices } from "@/store/voice";
 
 export default function UserInput() {
   const { loading, turn } = useGameStore();

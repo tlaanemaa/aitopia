@@ -1,4 +1,4 @@
-import { useGameStore } from "@/store/gameStore";
+import { useGameStore } from "../store/gameStore";
 
 export default function TurnCounter() {
   const { turn } = useGameStore();
