@@ -22,12 +22,10 @@ export const characterSchema = z.object({
     .default(""),
   positionX: z
     .number({ description: "Where the character will go on the X axis" })
-    .transform((val) => Math.max(0, Math.min(100, val)))
-    .default(50),
+    .transform((val) => Math.max(0, Math.min(100, val))),
   positionY: z
     .number({ description: "Where the character will go on the Y axis" })
-    .transform((val) => Math.max(0, Math.min(100, val)))
-    .default(50),
+    .transform((val) => Math.max(0, Math.min(100, val))),
 });
 
 export type Character = z.infer<typeof characterSchema>;
@@ -46,6 +44,14 @@ const formatLogMessage = (message: string): string => {
   const timestamp = new Date().toLocaleTimeString();
   return `[${timestamp}] ${message}`;
 };
+
+// Helper function to get a fuzzy position
+function getFuzzyPosition(): { positionX: number; positionY: number } {
+  return {
+    positionX: 50 + (Math.random() * 20 - 10), // Random value between 40-60
+    positionY: 50 + (Math.random() * 20 - 10), // Random value between 40-60
+  };
+}
 
 // State interface
 interface GameState {
@@ -103,6 +109,16 @@ export const useGameStore = create<GameState>()(
               `A new character named "${characterName}" has entered the story`
             )
           );
+
+          // Add fuzzy position for new characters if position not specified
+          if (
+            normalizedPatch.positionX == null &&
+            normalizedPatch.positionY == null
+          ) {
+            const fuzzyPos = getFuzzyPosition();
+            normalizedPatch.positionX = fuzzyPos.positionX;
+            normalizedPatch.positionY = fuzzyPos.positionY;
+          }
         }
 
         // Create or update character
