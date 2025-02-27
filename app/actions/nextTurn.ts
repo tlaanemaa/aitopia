@@ -6,9 +6,7 @@ import { promptLLM } from "./promptLLM";
 
 export async function nextTurn(userInput?: string, iteration = 0) {
   const { addLog } = getStore();
-  if (userInput?.trim()) {
-    addLog(`The game master added these instructions: ${userInput}`);
-  }
+  if (userInput?.trim()) addLog(userInput);
 
   const { characters, actionLog, setCharacter, addTurn, setLoading } =
     getStore();
