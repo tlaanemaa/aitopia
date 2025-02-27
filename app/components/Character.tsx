@@ -7,32 +7,6 @@ import {
 } from "../store/gameStore";
 import { useEffect, useState } from "react";
 import TypeWriter from "./TypeWriter";
-import { pickFromArray } from "@/app/utils/hash";
-
-// Add available character images
-const CHARACTER_IMAGES = [
-  "/among_us.webp",
-  "/green.png",
-  "/yellow.png",
-  "/donut.gif",
-  "/cat.gif",
-  "/banana_hi.gif",
-  "/broccoli.gif",
-  "/alex.webp",
-  "/carrot.gif",
-  "/fries.gif",
-  "/goat.gif",
-  "/potato1.gif",
-  "/cat2.gif",
-  "/cat3.gif",
-  "/duck.gif",
-  "/nyancat.gif",
-] as const;
-
-// Helper to get consistent image for a character
-function getCharacterImage(name: string): string {
-  return pickFromArray(CHARACTER_IMAGES, name);
-}
 
 export default function Character({
   character,
@@ -68,7 +42,7 @@ export default function Character({
     >
       <div className="relative flex flex-col items-center">
         <Image
-          src={getCharacterImage(character.characterName)}
+          src={character.avatar}
           alt={character.characterName}
           width={CHARACTER_WIDTH}
           height={CHARACTER_HEIGHT}

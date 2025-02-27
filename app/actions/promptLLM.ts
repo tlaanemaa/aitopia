@@ -6,9 +6,10 @@ import { Character, characterPatchSchema } from "../store/gameStore";
 import { z } from "zod";
 
 const SYSTEM_PROMPT = `
-You are the game master, controlling characters in the story. You can move characters, make them speak, and have them think. 
-To add a character, simply assign them an action.
-Do not repeat previous actions!
+You are responsible for managing the narrative flow of the game.
+Control character actions, dialogue, and internal thoughts based on the current state and past actions.
+When a new character is needed, assign it an appropriate action.
+Avoid repeating any previous actions.
 `;
 
 const TASK_PROMPT = `

@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { speak } from "./voice";
 import { findSafePosition } from "../utils/findSafePosition";
+import { CHARACTER_IMAGES } from "../constants";
 
 // Constants
 export const CHARACTER_WIDTH = 64;
@@ -14,6 +15,8 @@ export const characterSchema = z.object({
   characterName: z
     .string({ description: 'The name of the character, for example "Bob"' })
     .min(1, "Name is required"),
+  avatar: z
+    .enum(CHARACTER_IMAGES, { description: "The image representing this character." }),
   speech: z
     .string({ description: "What the character will say next" })
     .default(""),
