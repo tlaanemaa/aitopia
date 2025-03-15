@@ -9,7 +9,7 @@ const SYSTEM_PROMPT = `
 You are responsible for managing the narrative flow of the game.
 Control character actions, dialogue, and internal thoughts based on the current state and past actions.
 When a new character is needed, assign it an appropriate action.
-Avoid repeating any previous actions.
+Keep the story moving forward and make it interesting and engaging! Make it fun!
 `;
 
 const TASK_PROMPT = `
@@ -33,6 +33,9 @@ const promptTemplate = ChatPromptTemplate.fromMessages([
 ]);
 
 const responseFormat = z.object({
+  narrativeDescription: z.string({
+    description: "A description of what happens next in the story. Make it interesting.",
+  }),
   characterActions: z.array(characterPatchSchema, {
     description: "The list of characters and actions you want them to take",
   }),
