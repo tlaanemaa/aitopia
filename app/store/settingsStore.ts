@@ -17,7 +17,7 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
       endpoint: "http://localhost:11434",
-      modelName: "llama3.2:3b",
+      modelName: "gemma3:4b",
       availableModels: [],
       isOpen: false,
       setEndpoint: (endpoint) => set({ endpoint }),
