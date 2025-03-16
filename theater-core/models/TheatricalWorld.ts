@@ -490,7 +490,7 @@ export class TheatricalWorld {
   }
   
   /**
-   * Get all characters
+   * Get all characters in the world
    */
   getCharacters(): Character[] {
     return this.registry.getAllCharacters();
@@ -504,7 +504,7 @@ export class TheatricalWorld {
   }
   
   /**
-   * Get all props
+   * Get all props in the world
    */
   getProps(): Prop[] {
     return this.registry.getAllProps();
@@ -526,6 +526,13 @@ export class TheatricalWorld {
       throw new Error(`Current scene with ID ${this.currentSceneId} not found in registry`);
     }
     return scene;
+  }
+  
+  /**
+   * Alias for getScene() to maintain backward compatibility
+   */
+  getCurrentScene(): Scene {
+    return this.getScene();
   }
   
   /**

@@ -1,26 +1,23 @@
 /**
  * Theater Core
  * Domain model for an interactive theatrical storytelling system
+ * 
+ * This module exposes only the minimal interface needed for integration.
+ * Internal implementation details are hidden to simplify the conceptual model.
  */
 
-// Models
-export * from './models/Character';
-export * from './models/Perception';
-export * from './models/Scene';
-export * from './models/Prop';
-export * from './models/Playwright';
-export * from './models/TheatricalWorld';
-export * from './models/StoryOrchestrator';
-export * from './models/EntityRegistry';
+// Main entry point - The Play class and related types
+export { Play } from './models/Play';
+export type {
+  PlayConfig,
+  PlayCharacterConfig,
+  PlaySceneConfig,
+  PlayPropConfig,
+  PlayListener
+} from './models/Play';
 
-// Types
-export * from './types/common';
-export * from './types/events';
-export * from './types/actions';
-
-// Utils
-export * from './utils/spatial';
-export * from './utils/time';
-
-// Re-export services (to be added later)
-// export * from './services/LLMService'; 
+// Essential types for user configuration
+export type { LLMConfig } from './services/LLMService';
+export type { Position, Emotion, CharacterArchetype } from './types/common';
+export type { WorldEvent } from './types/events';
+export type { CharacterAction } from './types/actions'; 
