@@ -138,9 +138,16 @@ export interface ObservedEvent {
  * A plot thread in the story
  */
 export interface PlotThread {
+  id: string;
+  title: string;
   description: string;
-  resolved: boolean;
-  involvedCharacterIds: string[];
+  characterIds: string[];
+  goal: string;
+  status: 'active' | 'resolved';
+  progress: number;
+  createdAt: number;
+  resolution?: string;
+  resolvedAt?: number;
 }
 
 /**

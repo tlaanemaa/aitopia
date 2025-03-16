@@ -5,8 +5,8 @@ import { ChatOllama } from "@langchain/ollama";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { z } from "zod";
 
-import { TheatricalWorld } from "../models/TheatricalWorld";
-import { StoryOrchestrator } from "../models/StoryOrchestrator";
+import { WorldService } from "./WorldService";
+import { StoryManager } from "./StoryManager";
 import { Emotion } from "../types/common";
 import { CharacterAction, PlaywrightAction } from "../types/actions";
 
@@ -181,7 +181,7 @@ ${Object.values(Emotion).join(', ')}
    * Generate a character action
    */
   async generateCharacterAction(
-    world: TheatricalWorld,
+    world: WorldService,
     characterId: string,
     userInput?: string
   ): Promise<{
@@ -266,7 +266,7 @@ When specifying an emotion, use one of the following exact values: ${Object.valu
    * Generate director actions
    */
   async generateDirectorActions(
-    orchestrator: StoryOrchestrator,
+    storyManager: StoryManager,
     userInput?: string
   ): Promise<{
     narrativeDescription: string;
@@ -274,7 +274,7 @@ When specifying an emotion, use one of the following exact values: ${Object.valu
     nextCharacterId?: string;
   }> {
     // Get context from the orchestrator
-    const context = orchestrator.generateLLMContext(userInput);
+    const context = storyManager.generateLLMContext(userInput);
     
     // Create the prompt
     const promptTemplate = ChatPromptTemplate.fromMessages([

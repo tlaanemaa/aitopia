@@ -307,30 +307,56 @@ export class Director {
   /**
    * Add a new plot thread
    */
-  addPlotThread(description: string, involvedCharacterIds: string[] = []): void {
-    const plotThread: PlotThread = {
-      description,
-      resolved: false,
-      involvedCharacterIds: [...involvedCharacterIds]
-    };
-    
-    this.plotThreads.push(plotThread);
+  addPlotThread(plotThreadOrDescription: string | PlotThread, involvedCharacterIds: string[] = []): void {
+    if (typeof plotThreadOrDescription === 'string') {
+      // Old method signature (description string)
+      const description = plotThreadOrDescription;
+      const plotThread: PlotThread = {
+        id: uuidv4(),
+        title: description.substring(0, 30) + '...',
+        description,
+        characterIds: [...involvedCharacterIds],
+        goal: 'Complete the thread',
+        status: 'active',
+        progress: 0,
+        createdAt: getCurrentTime()
+      };
+      
+      this.plotThreads.push(plotThread);
+    } else {
+      // New method signature (PlotThread object)
+      this.plotThreads.push(plotThreadOrDescription);
+    }
   }
   
   /**
    * Resolve a plot thread
    */
-  resolvePlotThread(index: number): boolean {
-    if (index >= 0 && index < this.plotThreads.length) {
-      this.plotThreads[index].resolved = true;
+  resolvePlotThread(indexOrId: number | string, resolution?: string): boolean {
+    if (typeof indexOrId === 'number') {
+      // Old method signature (index number)
+      const index = indexOrId;
+      if (index >= 0 && index < this.plotThreads.length) {
+        this.plotThreads[index].status = 'resolved';
+        this.plotThreads[index].progress = 100;
+        if (resolution) {
+          this.plotThreads[index].resolution = resolution;
+        }
+        this.plotThreads[index].resolvedAt = getCurrentTime();
+        
+        // Progress the narrative when resolving plot threads
+        this.progressNarrative(15);
+        
+        return true;
+      }
       
-      // Progress the narrative when resolving plot threads
-      this.progressNarrative(15);
-      
-      return true;
+      return false;
+    } else {
+      // New method signature (thread ID string)
+      const threadId = indexOrId;
+      const index = this.plotThreads.findIndex(thread => thread.id === threadId);
+      return index >= 0 ? this.resolvePlotThread(index, resolution) : false;
     }
-    
-    return false;
   }
   
   /**
@@ -386,7 +412,7 @@ export class Director {
     
     // Generate plot threads
     const unresolvedPlots = this.plotThreads
-      .filter(p => !p.resolved)
+      .filter(p => p.status !== 'resolved')
       .map(p => p.description)
       .join('\n');
     
@@ -408,5 +434,24 @@ export class Director {
       ${unresolvedPlots.length > 0 ? `UNRESOLVED PLOT THREADS:\n${unresolvedPlots}` : ''}
       ${directionText}
     `.trim();
+  }
+  
+  /**
+   * Get the current narrative phase
+   */
+  getCurrentPhase(): string {
+    return this.narrativePhase;
+  }
+  
+  /**
+   * Generate a summary of unresolved plot threads
+   */
+  generatePlotThreadSummary(): string {
+    const unresolvedThreads = this.plotThreads
+      .filter(p => p.status !== 'resolved')
+      .map(p => `- ${p.description}`)
+      .join('\n');
+    
+    return unresolvedThreads || 'No active plot threads.';
   }
 } 

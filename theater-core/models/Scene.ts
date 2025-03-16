@@ -204,4 +204,30 @@ export class Scene {
       ${this.obstacles.length > 0 ? `NOTABLE FEATURES: ${obstacleDescs}` : ''}
     `.trim();
   }
+  
+  /**
+   * Check if line of sight is blocked by an obstacle
+   */
+  isLineOfSightBlocked(fromPosition: Position, toPosition: Position, obstacle: Obstacle): boolean {
+    // Simple implementation: if the obstacle is between the two positions, sight is blocked
+    const distanceFromObstacle = Math.sqrt(
+      Math.pow(fromPosition.x - obstacle.position.x, 2) + 
+      Math.pow(fromPosition.y - obstacle.position.y, 2)
+    );
+    
+    const distanceToTarget = Math.sqrt(
+      Math.pow(fromPosition.x - toPosition.x, 2) + 
+      Math.pow(fromPosition.y - toPosition.y, 2)
+    );
+    
+    const distanceObstacleToTarget = Math.sqrt(
+      Math.pow(obstacle.position.x - toPosition.x, 2) + 
+      Math.pow(obstacle.position.y - toPosition.y, 2)
+    );
+    
+    // If the obstacle is roughly on the line between the two positions
+    // (using a small threshold to account for precision errors)
+    const threshold = 1.0; // 1 unit threshold
+    return Math.abs(distanceFromObstacle + distanceObstacleToTarget - distanceToTarget) < threshold;
+  }
 } 
