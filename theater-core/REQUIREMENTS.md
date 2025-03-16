@@ -43,6 +43,17 @@ Create a domain model for interactive narrative experiences powered by small lan
 - Integration of audience input
 - Maintaining narrative coherence
 
+### Turn Flow
+- Sequential turn order: Director (formerly Playwright) takes a turn, followed by each character in sequence
+- Director handles scene changes, adding/removing characters, and major narrative shifts
+- Each character takes their individual turn to act, speak, and express emotions
+- Characters act and speak in first person, embodying their own unique perspective and personality
+- Characters make decisions based on their own motivations, not as puppets of the Director
+- After all characters have taken their turns, control returns to the Director
+- Clear delineation between Director's control of the world and characters' individual agency
+- Observer input may be solicited at appropriate breaks in the sequence
+- Characters maintain a consistent rotation order (e.g., Director → Bob → Alice → Director → Bob → Alice)
+
 ## Interactive Elements
 
 ### Observer Participation
