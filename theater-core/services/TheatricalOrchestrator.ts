@@ -91,23 +91,23 @@ export class TheatricalOrchestrator {
    */
   async start(): Promise<void> {
     try {
-      // Generate initial playwright actions to set the scene
-      const playwrightResponse = await this.llmService.generatePlaywrightActions(this.orchestrator);
+      // Generate initial director actions to set the scene
+      const directorResponse = await this.llmService.generateDirectorActions(this.orchestrator);
       
       // Notify listeners of the narration
-      this.notifyNarration(playwrightResponse.narrativeDescription);
+      this.notifyNarration(directorResponse.narrativeDescription);
       
       // Process the actions
-      const result = this.world.getPlaywright().processAction(playwrightResponse.actions[0]);
+      const results = this.orchestrator.processDirectorActions(directorResponse.actions);
       
-      // Notify listeners of events
-      this.notifyEvents(result.worldEvents);
+      // Notify listeners of the events
+      this.notifyEvents(results.events);
       
-      // If we have a character to focus on, prepare for their turn
-      if (result.nextCharacterId) {
-        await this.prepareCharacterTurn(result.nextCharacterId);
+      // If there's a next character, advance to them
+      if (directorResponse.nextCharacterId) {
+        await this.processCharacterTurn(directorResponse.nextCharacterId);
       } else {
-        // Request user input to proceed
+        // Otherwise, request user input
         this.notifyRequireUserInput();
       }
     } catch (error) {
@@ -166,19 +166,19 @@ export class TheatricalOrchestrator {
       
       // Check if we need to process playwright actions
       if (!orchestratorResult.activeCharacter || this.consecutiveTurns % 3 === 0) {
-        // Get playwright actions from LLM
-        const playwrightResponse = await this.llmService.generatePlaywrightActions(
+        // Get director actions from LLM
+        const directorResponse = await this.llmService.generateDirectorActions(
           this.orchestrator,
           userInput
         );
         
         // Notify listeners of the narration
-        this.notifyNarration(playwrightResponse.narrativeDescription);
+        this.notifyNarration(directorResponse.narrativeDescription);
         
         // Process each action
         const allEvents: WorldEvent[] = [];
-        for (const action of playwrightResponse.actions) {
-          const result = this.world.getPlaywright().processAction(action);
+        for (const action of directorResponse.actions) {
+          const result = this.world.getDirector().processAction(action);
           allEvents.push(...result.worldEvents);
         }
         
@@ -188,18 +188,18 @@ export class TheatricalOrchestrator {
         }
         
         // If we have a specified next character, prepare for their turn
-        if (playwrightResponse.nextCharacterId) {
-          const character = this.world.getCharacter(playwrightResponse.nextCharacterId);
+        if (directorResponse.nextCharacterId) {
+          const character = this.world.getCharacter(directorResponse.nextCharacterId);
           if (character) {
             // Schedule the character's turn after a delay
             setTimeout(() => {
-              this.prepareCharacterTurn(playwrightResponse.nextCharacterId!);
+              this.prepareCharacterTurn(directorResponse.nextCharacterId!);
             }, this.config.turnDelay);
             
             return {
               events: allEvents,
-              narrativeDescription: playwrightResponse.narrativeDescription,
-              characterId: playwrightResponse.nextCharacterId,
+              narrativeDescription: directorResponse.narrativeDescription,
+              characterId: directorResponse.nextCharacterId,
               characterName: character.name,
               shouldAdvance: true,
               requiresUserInput: false
@@ -210,7 +210,7 @@ export class TheatricalOrchestrator {
         // If no character specified or character not found, require user input
         return {
           events: allEvents,
-          narrativeDescription: playwrightResponse.narrativeDescription,
+          narrativeDescription: directorResponse.narrativeDescription,
           shouldAdvance: false,
           requiresUserInput: true
         };

@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Character } from './Character';
 import { Scene } from './Scene';
 import { Prop } from './Prop';
-import { Playwright } from './Playwright';
+import { Director } from './Director';
 import { CharacterAction, PlaywrightAction } from '../types/actions';
 import { WorldEvent } from '../types/events';
 import { calculateDistance } from '../utils/spatial';
@@ -20,7 +20,7 @@ export interface TheatricalWorldOptions {
   initialScene?: Scene;
   initialCharacters?: Character[];
   initialProps?: Prop[];
-  playwright?: Playwright;
+  director?: Director;
 }
 
 /**
@@ -31,7 +31,7 @@ export class TheatricalWorld {
   readonly id: string;
   readonly registry: EntityRegistry;
   private currentSceneId: string;
-  private playwright: Playwright;
+  private director: Director;
   
   // History
   private worldTime: number;
@@ -74,8 +74,8 @@ export class TheatricalWorld {
     this.registry.registerScene(initialScene);
     this.currentSceneId = initialScene.id;
     
-    // Set up playwright
-    this.playwright = options.playwright || new Playwright();
+    // Set up director
+    this.director = options.director || new Director();
     
     // Add any initial characters
     if (options.initialCharacters) {
@@ -109,8 +109,8 @@ export class TheatricalWorld {
     // Register character in the registry
     this.registry.registerCharacter(character);
     
-    // Add to playwright's character rotation
-    this.playwright.characterRotation.push(character.id);
+    // Add to director's character rotation
+    this.director.characterRotation.push(character.id);
     
     // Log entrance event
     const event: WorldEvent = {
@@ -153,8 +153,8 @@ export class TheatricalWorld {
     this.logEvent(event);
     this.propagateEvent(event);
     
-    // Remove from playwright's character rotation
-    this.playwright.removeCharacterFromRotation(characterId);
+    // Remove from director's character rotation
+    this.director.removeCharacterFromRotation(characterId);
     
     // Remove from registry
     this.registry.unregisterCharacter(characterId);
@@ -412,7 +412,7 @@ export class TheatricalWorld {
     nextCharacterId?: string;
   } {
     // Let the playwright process the action
-    const result = this.playwright.processAction(action);
+    const result = this.director.processAction(action);
     
     // Update the world with results
     
@@ -536,10 +536,10 @@ export class TheatricalWorld {
   }
   
   /**
-   * Get the playwright
+   * Get the director
    */
-  getPlaywright(): Playwright {
-    return this.playwright;
+  getDirector(): Director {
+    return this.director;
   }
   
   /**
@@ -630,7 +630,7 @@ export class TheatricalWorld {
    * Get the next character in the rotation
    */
   getNextCharacter(): Character | undefined {
-    const nextCharacterId = this.playwright.getNextCharacterId();
+    const nextCharacterId = this.director.getNextCharacterId();
     
     if (!nextCharacterId) {
       return undefined;

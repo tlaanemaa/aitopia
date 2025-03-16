@@ -9,7 +9,7 @@ import { LLMConfig } from '../services/LLMService';
 import { Scene } from './Scene';
 import { Character } from './Character';
 import { Prop } from './Prop';
-import { Playwright } from './Playwright';
+import { Director } from './Director';
 import { WorldEvent } from '../types/events';
 import { CharacterAction } from '../types/actions';
 import { EntityRegistry } from './EntityRegistry';
@@ -103,87 +103,81 @@ export class Play {
     this.id = uuidv4();
     this.title = config.title;
     
-    // Create a registry for entity management
-    const registry = new EntityRegistry();
-    
-    // Create the scene
+    // Create scene
     const scene = new Scene({
       name: config.scene.name,
       description: config.scene.description,
-      mood: config.scene.mood || 'neutral',
-      time: config.scene.time || 'day',
-      width: config.scene.width || 100,
-      height: config.scene.height || 100,
-      obstacles: [],
-      entrancePoints: [{ x: 0, y: 0 }],
+      mood: config.scene.mood,
+      time: config.scene.time,
+      width: config.scene.width,
+      height: config.scene.height,
       backgroundImageUrl: config.scene.backgroundImageUrl
     });
     
-    // Create the playwright
-    const playwright = new Playwright({
-      name: 'Playwright',
-      storyTitle: config.title,
-      storyGenre: config.genre || 'Drama',
-      storyTheme: config.theme || '',
-      initialPhase: NarrativePhase.EXPOSITION
-    });
-    
-    // Create the world
-    this.world = new TheatricalWorld({
-      registry,
-      initialScene: scene,
-      playwright
-    });
-    
-    // Add characters
+    // Create characters
+    const characters: Character[] = [];
     if (config.initialCharacters) {
-      config.initialCharacters.forEach(charConfig => {
-        const character = new Character(
-          {
-            name: charConfig.name,
-            traits: charConfig.traits || [],
-            archetype: charConfig.archetype,
-            backstory: charConfig.backstory || '',
-            appearance: charConfig.appearance || '',
-            goal: charConfig.goal || '',
-            initialEmotion: charConfig.initialEmotion || Emotion.NEUTRAL,
-            initialPosition: charConfig.initialPosition || { x: 50, y: 50 },
-            avatarUrl: charConfig.avatarUrl
-          },
-          registry
-        );
-        
-        this.world.addCharacter(character);
-      });
+      for (const charConfig of config.initialCharacters) {
+        characters.push(new Character({
+          name: charConfig.name,
+          traits: charConfig.traits || [],
+          archetype: charConfig.archetype,
+          backstory: charConfig.backstory,
+          appearance: charConfig.appearance,
+          goal: charConfig.goal,
+          initialEmotion: charConfig.initialEmotion,
+          initialPosition: charConfig.initialPosition,
+          avatarUrl: charConfig.avatarUrl
+        }, new EntityRegistry()));
+      }
     }
     
-    // Add props
+    // Create props
+    const props: Prop[] = [];
     if (config.initialProps) {
-      config.initialProps.forEach(propConfig => {
-        const prop = new Prop({
+      for (const propConfig of config.initialProps) {
+        props.push(new Prop({
           type: propConfig.type,
           name: propConfig.name || propConfig.type,
           description: propConfig.description,
           initialPosition: propConfig.position,
-          size: propConfig.size || { width: 1, height: 1 },
+          size: propConfig.size,
           movable: propConfig.movable,
           interactable: propConfig.interactable,
-          states: propConfig.states || [],
+          states: propConfig.states,
           initialState: propConfig.initialState,
           imageUrl: propConfig.imageUrl
-        });
-        
-        this.world.addProp(prop);
-      });
+        }));
+      }
     }
     
-    // Create the orchestrator
-    this.orchestrator = new TheatricalOrchestrator(this.world, {
-      llmConfig: config.llm,
-      autoAdvance: config.autoAdvance !== undefined ? config.autoAdvance : true,
-      turnDelay: config.turnDelay || 1000,
-      maxConsecutiveTurns: config.maxConsecutiveTurns || 5
+    // Create director with appropriate settings
+    const director = new Director({
+      name: 'Director',
+      storyTitle: config.title,
+      storyGenre: config.genre,
+      storyTheme: config.theme,
+      initialPhase: NarrativePhase.EXPOSITION
     });
+    
+    // Create theatrical world
+    this.world = new TheatricalWorld({
+      initialScene: scene,
+      initialCharacters: characters,
+      initialProps: props,
+      director
+    });
+    
+    // Create orchestrator service
+    this.orchestrator = new TheatricalOrchestrator(
+      this.world,
+      {
+        llmConfig: config.llm,
+        autoAdvance: config.autoAdvance !== false, 
+        turnDelay: config.turnDelay || 1000, 
+        maxConsecutiveTurns: config.maxConsecutiveTurns || 10
+      }
+    );
   }
   
   /**

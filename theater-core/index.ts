@@ -20,4 +20,7 @@ export type {
 export type { LLMConfig } from './services/LLMService';
 export type { Position, Emotion, CharacterArchetype } from './types/common';
 export type { WorldEvent } from './types/events';
-export type { CharacterAction } from './types/actions'; 
+export type { CharacterAction } from './types/actions';
+
+// Also export Director (formerly Playwright)
+export { Director } from './models/Director'; 

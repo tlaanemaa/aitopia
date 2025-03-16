@@ -1,5 +1,5 @@
 /**
- * Playwright - Manages the narrative and directs the theatrical experience
+ * Director - Manages the narrative and directs the theatrical experience
  */
 import { v4 as uuidv4 } from 'uuid';
 import { 
@@ -18,9 +18,9 @@ import { Prop, PropData } from './Prop';
 import { EntityRegistry } from './EntityRegistry';
 
 /**
- * Playwright metadata
+ * Director metadata
  */
-export interface PlaywrightData {
+export interface DirectorData {
   id?: string;
   name?: string;
   storyTitle?: string;
@@ -30,9 +30,9 @@ export interface PlaywrightData {
 }
 
 /**
- * Playwright class - Directs the narrative
+ * Director class - Directs the narrative
  */
-export class Playwright {
+export class Director {
   // Identity
   readonly id: string;
   name: string;
@@ -53,9 +53,9 @@ export class Playwright {
   private registry: EntityRegistry;
   
   /**
-   * Create a new playwright
+   * Create a new director
    */
-  constructor(data: PlaywrightData = {}) {
+  constructor(data: DirectorData = {}) {
     // Set identity properties
     this.id = data.id || uuidv4();
     this.name = data.name || 'Narrator';
@@ -77,7 +77,7 @@ export class Playwright {
   }
   
   /**
-   * Process a playwright action from the LLM
+   * Process a director action from the LLM
    */
   processAction(action: PlaywrightAction): {
     worldEvents: WorldEvent[];

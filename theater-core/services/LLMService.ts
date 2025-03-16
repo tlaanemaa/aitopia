@@ -5,10 +5,9 @@ import { ChatOllama } from "@langchain/ollama";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { z } from "zod";
 
-import { Character } from "../models/Character";
 import { TheatricalWorld } from "../models/TheatricalWorld";
 import { StoryOrchestrator } from "../models/StoryOrchestrator";
-import { Emotion, CharacterArchetype, Position } from "../types/common";
+import { Emotion, CharacterArchetype } from "../types/common";
 import { CharacterAction, PlaywrightAction } from "../types/actions";
 
 /**
@@ -29,8 +28,8 @@ const characterActionSchema = z.object({
   interactionType: z.string().optional()
 });
 
-// Schema for playwright action
-const playwrightActionSchema = z.object({
+// Schema for director action (formerly playwright action)
+const directorActionSchema = z.object({
   type: z.enum(["narration", "scene_change", "new_character", "new_prop", "advance_rotation"]),
   description: z.string().optional(),
   newSceneName: z.string().optional(),
@@ -58,10 +57,10 @@ const characterTurnResponseSchema = z.object({
   suggestedResponse: z.string().optional()
 });
 
-// Schema for playwright turn response
-const playwrightTurnResponseSchema = z.object({
+// Schema for director turn response (formerly playwright)
+const directorTurnResponseSchema = z.object({
   narrativeDescription: z.string(),
-  actions: z.array(playwrightActionSchema),
+  actions: z.array(directorActionSchema),
   nextCharacterId: z.string().optional()
 });
 
@@ -88,8 +87,8 @@ Your task is to generate an action for the character that is consistent with the
 Think like a good improv actor: build on what has happened before, and make choices that create interesting story opportunities.
 `;
 
-  private readonly PLAYWRIGHT_SYSTEM_PROMPT = `
-You are the Playwright of an interactive theatrical experience.
+  private readonly DIRECTOR_SYSTEM_PROMPT = `
+You are the Director of an interactive theatrical experience.
 Your job is to manage the flow of the narrative, introduce new elements, and guide the story.
 You will be given information about the current state of the world, the characters, and recent events.
 Based on this information, you may:
@@ -98,8 +97,6 @@ Based on this information, you may:
 3. Introduce new characters
 4. Add new props
 5. Direct which character should act next
-
-Make choices that create an engaging, coherent, and dramatic story experience.
 `;
 
   /**
@@ -195,9 +192,9 @@ Based on this information, what would your character do next? Consider speech, t
   }
   
   /**
-   * Generate playwright actions
+   * Generate director actions
    */
-  async generatePlaywrightActions(
+  async generateDirectorActions(
     orchestrator: StoryOrchestrator,
     userInput?: string
   ): Promise<{
@@ -210,7 +207,7 @@ Based on this information, what would your character do next? Consider speech, t
     
     // Create the prompt
     const promptTemplate = ChatPromptTemplate.fromMessages([
-      ["system", this.PLAYWRIGHT_SYSTEM_PROMPT.trim()],
+      ["system", this.DIRECTOR_SYSTEM_PROMPT.trim()],
       ["user", `
 WORLD STATE:
 ${context.world}
@@ -226,7 +223,7 @@ ${context.turnCount}
 
 ${userInput ? `USER INPUT: ${userInput}` : ""}
 
-As the Playwright, what actions would you take to move the story forward? Consider:
+As the Director, what actions would you take to move the story forward? Consider:
 - Adding narration to set the scene
 - Changing the scene if appropriate
 - Introducing new characters if needed
@@ -238,15 +235,15 @@ Provide a narrative description and list the actions you want to take.
     ]);
     
     // Structure the LLM output
-    const structuredLLM = this.model.withStructuredOutput(playwrightTurnResponseSchema);
+    const structuredLLM = this.model.withStructuredOutput(directorTurnResponseSchema);
     
     // Generate the response
     try {
       const prompt = await promptTemplate.invoke({});
-      console.log("Playwright Prompt:", prompt.toString());
+      console.log("Director Prompt:", prompt.toString());
       
       const response = await structuredLLM.invoke(prompt);
-      console.log("Playwright LLM Response:", response);
+      console.log("Director LLM Response:", response);
       
       return {
         narrativeDescription: response.narrativeDescription,
@@ -254,7 +251,7 @@ Provide a narrative description and list the actions you want to take.
         nextCharacterId: response.nextCharacterId
       };
     } catch (error) {
-      console.error("Error generating playwright actions:", error);
+      console.error("Error generating director actions:", error);
       
       // Fallback to a default action with required fields
       return {

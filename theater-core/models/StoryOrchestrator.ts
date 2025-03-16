@@ -128,15 +128,15 @@ export class StoryOrchestrator {
     }
     
     // Process the turn based on the current narrative phase
-    const playwright = this.world.getPlaywright();
-    const currentPhase = playwright.narrativePhase;
+    const director = this.world.getDirector();
+    const currentPhase = director.narrativePhase;
     let events: WorldEvent[] = [];
     let narrativeDescription = "";
     let shouldRequestUserInput = false;
     
     // Determine if we should advance the narrative phase
     if (this.turnCount % this.config.maxTurnsPerPhase === 0) {
-      playwright.progressNarrative(20);
+      director.progressNarrative(20);
     }
     
     // Process based on phase
@@ -274,7 +274,7 @@ export class StoryOrchestrator {
     
     // Add a plot thread if none exists yet
     const revelation = `${activeCharacter.name} has discovered a shocking truth.`;
-    this.world.getPlaywright().addPlotThread(revelation, [activeCharacter.id]);
+    this.world.getDirector().addPlotThread(revelation, [activeCharacter.id]);
     
     // Store the plot thread locally too
     const threadId = uuidv4();
@@ -319,7 +319,11 @@ export class StoryOrchestrator {
       // Mark the thread as resolved
       thread.resolved = true;
       this.plotThreads.set(thread.id, thread);
-      this.world.getPlaywright().resolvePlotThread(this.world.getPlaywright().plotThreads.findIndex(pt => pt.description === thread.description));
+      this.world.getDirector().resolvePlotThread(
+        this.world.getDirector().plotThreads.findIndex(
+          (pt: PlotThread) => pt.description === thread.description
+        )
+      );
       
       return `${activeCharacter.name} takes decisive steps to resolve the situation, bringing a sense of progress.`;
     } else {
@@ -467,7 +471,7 @@ export class StoryOrchestrator {
       activeCharacter: activeCharacter 
         ? `Active Character: ${activeCharacter.name} (${activeCharacter.archetype}), currently feeling ${activeCharacter.currentEmotion}` 
         : 'No active character',
-      narrativePhase: this.world.getPlaywright().narrativePhase,
+      narrativePhase: this.world.getDirector().narrativePhase,
       turnCount: this.turnCount,
       userInput: userInput
     };
@@ -493,5 +497,32 @@ export class StoryOrchestrator {
     
     // Process the playwright action
     this.world.processPlaywrightAction(playwrightAction);
+  }
+
+  /**
+   * Process director actions
+   */
+  processDirectorActions(actions: any[]): {
+    events: WorldEvent[];
+    narrativeDescription: string;
+  } {
+    const events: WorldEvent[] = [];
+    let narrativeDescription = '';
+    
+    // Process each action
+    for (const action of actions) {
+      if (action.type === 'narration') {
+        narrativeDescription += action.description + ' ';
+      } else {
+        // Process non-narration action through the world
+        const result = this.world.processPlaywrightAction(action);
+        events.push(...result.events);
+      }
+    }
+    
+    return {
+      events,
+      narrativeDescription: narrativeDescription.trim()
+    };
   }
 } 
