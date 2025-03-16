@@ -30,6 +30,10 @@ export enum Emotion {
   ASHAMED = 'ashamed',
   CALM = 'calm',
   NEUTRAL = 'neutral',
+  THOUGHTFUL = 'thoughtful',
+  CONTENT = 'content',
+  REFLECTIVE = 'reflective',
+  SHOCKED = 'shocked'
 }
 
 /**

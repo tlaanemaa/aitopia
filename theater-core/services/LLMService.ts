@@ -174,16 +174,19 @@ Based on this information, what would your character do next? Consider speech, t
       
       return {
         narrativeDescription: response.narrativeDescription,
-        action: this.validateAndTransformCharacterAction(response.action),
+        action: this.validateAndTransformCharacterAction(response.action, characterId),
         suggestedResponse: response.suggestedResponse
       };
     } catch (error) {
       console.error("Error generating character action:", error);
       
-      // Fallback to a default action
+      // Fallback to a default action with required fields
       return {
         narrativeDescription: `${character.name} seems lost in thought.`,
         action: {
+          characterId: characterId,
+          actionId: Date.now().toString(),
+          timestamp: Date.now(),
           thought: "I'm not sure what to do right now.",
           emotion: character.currentEmotion
         }
@@ -253,12 +256,13 @@ Provide a narrative description and list the actions you want to take.
     } catch (error) {
       console.error("Error generating playwright actions:", error);
       
-      // Fallback to a default action
+      // Fallback to a default action with required fields
       return {
         narrativeDescription: "The story continues...",
         actions: [{
-          type: "narration",
-          description: "The scene remains quiet for a moment."
+          actionId: Date.now().toString(),
+          timestamp: Date.now(),
+          narration: "The scene remains quiet for a moment."
         }]
       };
     }
@@ -267,8 +271,12 @@ Provide a narrative description and list the actions you want to take.
   /**
    * Validate and transform a character action from the LLM
    */
-  private validateAndTransformCharacterAction(action: any): CharacterAction {
-    const characterAction: CharacterAction = {};
+  private validateAndTransformCharacterAction(action: any, characterId: string): CharacterAction {
+    const characterAction: CharacterAction = {
+      characterId: action.characterId || characterId,
+      actionId: action.actionId || Date.now().toString(),
+      timestamp: action.timestamp || Date.now()
+    };
     
     // Copy speech if provided
     if (action.speech) {
@@ -310,37 +318,45 @@ Provide a narrative description and list the actions you want to take.
    */
   private validateAndTransformPlaywrightAction(action: any): PlaywrightAction {
     const playwrightAction: PlaywrightAction = {
-      type: action.type
+      actionId: action.actionId || Date.now().toString(),
+      timestamp: action.timestamp || Date.now()
     };
     
-    // Copy description if provided
-    if (action.description) {
-      playwrightAction.description = action.description;
+    // Handle narration
+    if (action.type === 'narration' && action.description) {
+      playwrightAction.narration = action.description;
     }
     
-    // Handle scene change specifics
-    if (action.type === 'scene_change') {
-      if (action.newSceneName) playwrightAction.newSceneName = action.newSceneName;
-      if (action.newSceneDescription) playwrightAction.newSceneDescription = action.newSceneDescription;
+    // Handle scene change
+    if (action.type === 'scene_change' && action.newSceneName && action.newSceneDescription) {
+      playwrightAction.sceneChange = {
+        newSceneId: action.newSceneName,
+        description: action.newSceneDescription
+      };
     }
     
-    // Handle new character specifics
-    if (action.type === 'new_character') {
-      if (action.characterName) playwrightAction.characterName = action.characterName;
-      if (action.characterTraits) playwrightAction.characterTraits = action.characterTraits;
-      if (action.characterArchetype) playwrightAction.characterArchetype = this.mapToArchetype(action.characterArchetype);
-      if (action.characterBackstory) playwrightAction.characterBackstory = action.characterBackstory;
-      if (action.characterAppearance) playwrightAction.characterAppearance = action.characterAppearance;
-      if (action.characterGoal) playwrightAction.characterGoal = action.characterGoal;
-      if (action.characterEmotion) playwrightAction.characterEmotion = this.mapToEmotion(action.characterEmotion);
+    // Handle new character
+    if (action.type === 'new_character' && action.characterName) {
+      const newCharacter = {
+        name: action.characterName,
+        traits: action.characterTraits || [],
+        position: { x: 50, y: 50 }, // Default position
+        initialEmotion: this.mapToEmotion(action.characterEmotion) || Emotion.NEUTRAL,
+        description: action.characterBackstory || 'A new character'
+      };
+      
+      playwrightAction.newCharacters = [newCharacter];
     }
     
-    // Handle new prop specifics
-    if (action.type === 'new_prop') {
-      if (action.propType) playwrightAction.propType = action.propType;
-      if (action.propName) playwrightAction.propName = action.propName;
-      if (action.propDescription) playwrightAction.propDescription = action.propDescription;
-      if (action.propPosition) playwrightAction.propPosition = action.propPosition;
+    // Handle new prop
+    if (action.type === 'new_prop' && action.propType) {
+      const newProp = {
+        propType: action.propType,
+        position: action.propPosition || { x: 50, y: 50 },
+        description: action.propDescription || `A ${action.propType}`
+      };
+      
+      playwrightAction.newProps = [newProp];
     }
     
     return playwrightAction;

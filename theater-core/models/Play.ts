@@ -2,9 +2,9 @@
  * Play - The main entry point for the theatrical storytelling system
  */
 import { v4 as uuidv4 } from 'uuid';
-import { TheatricalWorld, TheatricalWorldOptions } from './TheatricalWorld';
+import { TheatricalWorld } from './TheatricalWorld';
 import { TheatricalOrchestrator, TheatricalExperienceListener } from '../services/TheatricalOrchestrator';
-import { CharacterArchetype, Emotion, Position } from '../types/common';
+import { CharacterArchetype, Emotion, Position, NarrativePhase } from '../types/common';
 import { LLMConfig } from '../services/LLMService';
 import { Scene } from './Scene';
 import { Character } from './Character';
@@ -12,6 +12,7 @@ import { Prop } from './Prop';
 import { Playwright } from './Playwright';
 import { WorldEvent } from '../types/events';
 import { CharacterAction } from '../types/actions';
+import { EntityRegistry } from './EntityRegistry';
 
 /**
  * Configuration for a character in a play
@@ -93,6 +94,7 @@ export class Play {
   private readonly world: TheatricalWorld;
   private readonly orchestrator: TheatricalOrchestrator;
   private readonly title: string;
+  private readonly listenerMap: Map<PlayListener, TheatricalExperienceListener> = new Map();
   
   /**
    * Create a new play
@@ -100,6 +102,9 @@ export class Play {
   constructor(config: PlayConfig) {
     this.id = uuidv4();
     this.title = config.title;
+    
+    // Create a registry for entity management
+    const registry = new EntityRegistry();
     
     // Create the scene
     const scene = new Scene({
@@ -120,11 +125,12 @@ export class Play {
       storyTitle: config.title,
       storyGenre: config.genre || 'Drama',
       storyTheme: config.theme || '',
-      initialPhase: 'EXPOSITION'
+      initialPhase: NarrativePhase.EXPOSITION
     });
     
     // Create the world
     this.world = new TheatricalWorld({
+      registry,
       initialScene: scene,
       playwright
     });
@@ -132,17 +138,20 @@ export class Play {
     // Add characters
     if (config.initialCharacters) {
       config.initialCharacters.forEach(charConfig => {
-        const character = new Character({
-          name: charConfig.name,
-          traits: charConfig.traits || [],
-          archetype: charConfig.archetype,
-          backstory: charConfig.backstory || '',
-          appearance: charConfig.appearance || '',
-          goal: charConfig.goal || '',
-          initialEmotion: charConfig.initialEmotion || 'NEUTRAL',
-          initialPosition: charConfig.initialPosition || { x: 50, y: 50 },
-          avatarUrl: charConfig.avatarUrl
-        });
+        const character = new Character(
+          {
+            name: charConfig.name,
+            traits: charConfig.traits || [],
+            archetype: charConfig.archetype,
+            backstory: charConfig.backstory || '',
+            appearance: charConfig.appearance || '',
+            goal: charConfig.goal || '',
+            initialEmotion: charConfig.initialEmotion || Emotion.NEUTRAL,
+            initialPosition: charConfig.initialPosition || { x: 50, y: 50 },
+            avatarUrl: charConfig.avatarUrl
+          },
+          registry
+        );
         
         this.world.addCharacter(character);
       });
@@ -193,6 +202,9 @@ export class Play {
       onError: listener.onError || (() => {})
     };
     
+    // Store the mapping so we can remove it later
+    this.listenerMap.set(listener, adaptedListener);
+    
     this.orchestrator.addListener(adaptedListener);
   }
   
@@ -200,8 +212,11 @@ export class Play {
    * Remove a listener
    */
   removeListener(listener: PlayListener): void {
-    // Note: This is a simplification - we can't actually remove the adapted listener
-    // A proper implementation would need to store the mapping between PlayListener and TheatricalExperienceListener
+    const adaptedListener = this.listenerMap.get(listener);
+    if (adaptedListener) {
+      this.orchestrator.removeListener(adaptedListener);
+      this.listenerMap.delete(listener);
+    }
   }
   
   /**

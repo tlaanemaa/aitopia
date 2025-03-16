@@ -5,10 +5,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { TheatricalWorld } from './TheatricalWorld';
 import { Character } from './Character';
 import { WorldEvent } from '../types/events';
-import { CharacterAction, PlaywrightAction } from '../types/actions';
+import { CharacterAction } from '../types/actions';
 import { NarrativePhase, PlotThread } from '../types/common';
 import { getCurrentTime } from '../utils/time';
 import { EntityRegistry } from './EntityRegistry';
+import { Emotion } from '../types/common';
 
 /**
  * StoryOrchestrator configuration options
@@ -20,6 +21,9 @@ export interface StoryOrchestratorConfig {
   useTurnRotation: boolean;
   narrativeComplexity: 'simple' | 'standard' | 'complex';
   includeProps: boolean;
+  turnRate: number;
+  plotThreadsForResolution: number;
+  turnsBeforeUser: number;
 }
 
 /**
@@ -33,34 +37,38 @@ export class StoryOrchestrator {
   private turnCount: number;
   private sceneChangeCount: number;
   private activeCharacterId?: string;
-  private plotThreads: Map<string, PlotThread>;
+  private plotThreads: Map<string, PlotThread & { id: string; title: string }>;
   private config: StoryOrchestratorConfig;
   
   /**
    * Create a new story orchestrator
    */
-  constructor(world: TheatricalWorld, config?: Partial<StoryOrchestratorConfig>) {
+  constructor(world: TheatricalWorld, config: Partial<StoryOrchestratorConfig> = {}) {
     this.id = uuidv4();
     this.world = world;
     this.registry = world.getRegistry();
     this.userInput = [];
     this.turnCount = 0;
     this.sceneChangeCount = 0;
-    this.plotThreads = new Map();
+    this.plotThreads = new Map<string, PlotThread & { id: string; title: string }>();
     
     // Set default configuration
     this.config = {
       maxTurnsPerScene: 20,
-      maxTurnsPerPhase: 10, 
+      maxTurnsPerPhase: config.maxTurnsPerPhase || 5,
       maxUserInputsPerTurn: 3,
       useTurnRotation: true,
       narrativeComplexity: 'standard',
       includeProps: true,
-      ...config
+      turnRate: config.turnRate || 1,
+      plotThreadsForResolution: config.plotThreadsForResolution || 3,
+      turnsBeforeUser: config.turnsBeforeUser || 2
     };
     
-    // Make sure the playwright has access to the registry
-    world.getPlaywright().setRegistry(this.registry);
+    // Initialize state
+    this.turnCount = 0;
+    this.sceneChangeCount = 0;
+    this.plotThreads = new Map<string, PlotThread & { id: string; title: string }>();
   }
   
   /**
@@ -128,7 +136,7 @@ export class StoryOrchestrator {
     
     // Determine if we should advance the narrative phase
     if (this.turnCount % this.config.maxTurnsPerPhase === 0) {
-      playwright.progressNarrativePhase();
+      playwright.progressNarrative(20);
     }
     
     // Process based on phase
@@ -187,14 +195,14 @@ export class StoryOrchestrator {
   private processIntroductionPhase(activeCharacter: Character): string {
     // In introduction, focus on establishing character personalities and setting
     const action: CharacterAction = {
-      // If first turn, have character introduce themselves
-      speech: this.turnCount <= 1 
-        ? `Hello, my name is ${activeCharacter.name}. I am ${activeCharacter.description}.`
-        : undefined,
-      // Express an emotion appropriate for introduction
-      emotion: activeCharacter.currentEmotion,
-      // Add a thought about the scene
-      thought: `I wonder what's going to happen in ${this.world.getScene().name}. I should get to know the others.`
+      characterId: activeCharacter.id,
+      actionId: uuidv4(),
+      timestamp: getCurrentTime(),
+      emotion: Emotion.DETERMINED,
+      speech: activeCharacter.traits.includes('shy') 
+        ? `Hello, my name is ${activeCharacter.name}.`
+        : `Hello, my name is ${activeCharacter.name}. I am ${activeCharacter.traits.join(', ')}.`,
+      thought: `I should introduce myself and see what's going on here.`
     };
     
     // Process the action
@@ -214,7 +222,10 @@ export class StoryOrchestrator {
       .filter(c => c.id !== activeCharacter.id);
     
     let action: CharacterAction = {
-      emotion: 'determined'
+      characterId: activeCharacter.id,
+      actionId: uuidv4(),
+      timestamp: getCurrentTime(),
+      emotion: Emotion.DETERMINED
     };
     
     // If other characters are visible, interact with one
@@ -250,7 +261,10 @@ export class StoryOrchestrator {
     
     // Create a dramatic moment
     const action: CharacterAction = {
-      emotion: 'shocked',
+      characterId: activeCharacter.id,
+      actionId: uuidv4(),
+      timestamp: getCurrentTime(),
+      emotion: Emotion.SURPRISED,
       speech: "I've just realized what's really going on here!",
       thought: "Everything makes sense now. The pieces are falling into place."
     };
@@ -259,19 +273,19 @@ export class StoryOrchestrator {
     this.world.processCharacterAction(activeCharacter.id, action);
     
     // Add a plot thread if none exists yet
-    if (this.plotThreads.size === 0) {
-      const plotThread: PlotThread = {
-        id: uuidv4(),
-        title: "The Great Revelation",
-        description: `${activeCharacter.name} has discovered a shocking truth.`,
-        involvedCharacterIds: [activeCharacter.id],
-        resolved: false,
-        createdAt: getCurrentTime()
-      };
-      
-      this.plotThreads.set(plotThread.id, plotThread);
-      this.world.getPlaywright().addPlotThread(plotThread);
-    }
+    const revelation = `${activeCharacter.name} has discovered a shocking truth.`;
+    this.world.getPlaywright().addPlotThread(revelation, [activeCharacter.id]);
+    
+    // Store the plot thread locally too
+    const threadId = uuidv4();
+    const plotThread: PlotThread & { id: string; title: string } = {
+      id: threadId,
+      title: "The Great Revelation",
+      description: revelation,
+      resolved: false,
+      involvedCharacterIds: [activeCharacter.id]
+    };
+    this.plotThreads.set(threadId, plotThread);
     
     return `A moment of revelation strikes ${activeCharacter.name}, changing everything about the situation.`;
   }
@@ -291,8 +305,11 @@ export class StoryOrchestrator {
       const thread = unresolvedThreads[0];
       
       const action: CharacterAction = {
-        emotion: 'determined',
-        speech: `I know what needs to be done now. We need to address ${thread.title}.`,
+        characterId: activeCharacter.id,
+        actionId: uuidv4(),
+        timestamp: getCurrentTime(),
+        emotion: Emotion.DETERMINED,
+        speech: `I know what needs to be done now. We need to address ${thread.description}.`,
         thought: `This is the right path forward. I can help resolve this situation.`
       };
       
@@ -302,13 +319,16 @@ export class StoryOrchestrator {
       // Mark the thread as resolved
       thread.resolved = true;
       this.plotThreads.set(thread.id, thread);
-      this.world.getPlaywright().resolvePlotThread(thread.id);
+      this.world.getPlaywright().resolvePlotThread(this.world.getPlaywright().plotThreads.findIndex(pt => pt.description === thread.description));
       
       return `${activeCharacter.name} takes decisive steps to resolve the situation, bringing a sense of progress.`;
     } else {
       // No threads to resolve
       const action: CharacterAction = {
-        emotion: 'reflective',
+        characterId: activeCharacter.id,
+        actionId: uuidv4(),
+        timestamp: getCurrentTime(),
+        emotion: Emotion.CALM,
         speech: "Things are starting to make sense now. We're making progress.",
         thought: "We've come so far. The end is in sight."
       };
@@ -333,7 +353,10 @@ export class StoryOrchestrator {
     if (allThreadsResolved) {
       // Provide final closure
       const action: CharacterAction = {
-        emotion: 'content',
+        characterId: activeCharacter.id,
+        actionId: uuidv4(),
+        timestamp: getCurrentTime(),
+        emotion: Emotion.CONTENT,
         speech: "It seems our journey here is coming to an end. We've learned so much.",
         thought: "This experience has changed me. I'm not the same person I was when this began."
       };
@@ -345,7 +368,10 @@ export class StoryOrchestrator {
     } else {
       // Still need to resolve threads
       const action: CharacterAction = {
-        emotion: 'determined',
+        characterId: activeCharacter.id,
+        actionId: uuidv4(),
+        timestamp: getCurrentTime(),
+        emotion: Emotion.DETERMINED,
         speech: "We're almost there. Just a few loose ends to tie up.",
         thought: "So close to the end now. I need to make sure everything is resolved."
       };
@@ -382,8 +408,11 @@ export class StoryOrchestrator {
       // In a real implementation, this would be processed through an LLM
       // to determine the appropriate action
       const responseAction: CharacterAction = {
+        characterId: activeCharacter.id,
+        actionId: uuidv4(),
+        timestamp: getCurrentTime(),
+        emotion: Emotion.THOUGHTFUL,
         speech: `[Responding to user] ${input} is an interesting suggestion.`,
-        emotion: 'thoughtful',
         thought: `The user wants me to ${input}. I should consider how to incorporate this.`
       };
       
@@ -398,18 +427,19 @@ export class StoryOrchestrator {
    * Request a scene change
    */
   private requestSceneChange(): void {
-    this.sceneChangeCount++;
+    // Get all characters for narration
+    const characters = this.world.getCharacters();
+    const characterName = characters.length > 0 ? characters[0].name : "Everyone";
     
     // Create a playwright action to change the scene
-    const action: PlaywrightAction = {
-      type: 'scene_change',
-      description: `The scene needs to change after ${this.config.maxTurnsPerScene} turns.`,
-      newSceneName: `Scene ${this.sceneChangeCount + 1}`,
-      newSceneDescription: `A new environment for the characters to explore in act ${this.sceneChangeCount + 1}.`
+    const playwrightAction = {
+      actionId: uuidv4(),
+      timestamp: getCurrentTime(),
+      narration: `${characterName} looks up suddenly, noticing something unexpected...`
     };
     
     // Process the playwright action
-    this.world.processPlaywrightAction(action);
+    this.world.processPlaywrightAction(playwrightAction);
   }
   
   /**
@@ -441,5 +471,27 @@ export class StoryOrchestrator {
       turnCount: this.turnCount,
       userInput: userInput
     };
+  }
+
+  /**
+   * Change the scene
+   */
+  private changeScene(): void {
+    // Increment scene change counter
+    this.sceneChangeCount++;
+    
+    // Get all characters
+    const characters = this.world.getCharacters();
+    const characterNames = characters.map(c => c.name).join(", ");
+    
+    // Create a playwright action to change the scene
+    const playwrightAction = {
+      actionId: uuidv4(),
+      timestamp: getCurrentTime(),
+      narration: `The scene changes as ${characterNames} continue their journey...`
+    };
+    
+    // Process the playwright action
+    this.world.processPlaywrightAction(playwrightAction);
   }
 } 

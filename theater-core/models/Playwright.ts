@@ -50,7 +50,7 @@ export class Playwright {
   nextCharacterIndex: number;
   
   // Registry for entity lookup
-  private registry: EntityRegistry | null = null;
+  private registry: EntityRegistry;
   
   /**
    * Create a new playwright
@@ -71,13 +71,9 @@ export class Playwright {
     this.lastActionTimestamp = getCurrentTime();
     this.characterRotation = [];
     this.nextCharacterIndex = 0;
-  }
-  
-  /**
-   * Set the entity registry
-   */
-  setRegistry(registry: EntityRegistry): void {
-    this.registry = registry;
+    
+    // Store reference to registry
+    this.registry = new EntityRegistry();
   }
   
   /**
@@ -185,7 +181,7 @@ export class Playwright {
           traits: charData.traits,
           initialEmotion: charData.initialEmotion,
           initialPosition: charData.position
-        });
+        }, this.registry);
         
         newCharacters.push(character);
         
@@ -241,14 +237,30 @@ export class Playwright {
   }
   
   /**
-   * Create a new character through the playwright
+   * Create a new character
    */
-  createCharacter(data: Omit<CharacterData, 'id'>): Character {
-    const character = new Character(data);
+  createCharacter(charData: Partial<CharacterData>): Character {
+    // Generate a new character
+    const character = new Character({
+      id: uuidv4(),
+      name: charData.name || 'Anonymous Character',
+      traits: charData.traits || [],
+      backstory: charData.backstory || '',
+      initialPosition: charData.initialPosition || { x: 50, y: 50 }
+    }, this.registry);
     
-    // Add to character rotation
+    // Add the character to rotation
     this.characterRotation.push(character.id);
     
+    return character;
+  }
+  
+  /**
+   * Create a character
+   */
+  private createCharacterFromData(data: CharacterData): Character {
+    const character = new Character(data, this.registry);
+    this.characterRotation.push(character.id);
     return character;
   }
   
