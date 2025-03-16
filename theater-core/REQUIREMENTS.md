@@ -54,6 +54,26 @@ Create a domain model for interactive narrative experiences powered by small lan
 - Observer input may be solicited at appropriate breaks in the sequence
 - Characters maintain a consistent rotation order (e.g., Director → Bob → Alice → Director → Bob → Alice)
 
+### LLM Turn Processing
+- Each turn (Director or Character) is processed by the LLM
+- The LLM generates the content and actions for each turn based on the current state
+- Director turns: LLM generates world events, scene changes, character additions/removals
+- Character turns: LLM generates dialogue, emotions, actions based on character personality
+- All important narrative decisions come from the LLM, not hardcoded logic
+- System provides contextual information to the LLM for coherent turn generation
+
+### Character Perception and Event Propagation
+- Characters should maintain their own subjective understanding of the world
+- Information propagates naturally between characters based on perception
+- Characters can only perceive events within their sensory range (sight, hearing)
+- Dialogue and sounds have a hearing range that can be affected by distance and obstacles
+- Visual events have a sight range that can be blocked by obstacles or other characters
+- Global events (like scene changes) are perceived by all characters
+- A character's knowledge, decisions, and dialogue should be based only on what they've perceived
+- The Director can narrate events that are not directly perceived by any character
+- Characters should react naturally to new information they perceive
+- This creates potential for dramatic irony where some characters know things others don't
+
 ## Interactive Elements
 
 ### Observer Participation
