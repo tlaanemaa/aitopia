@@ -7,8 +7,14 @@ import { z } from "zod";
 
 import { TheatricalWorld } from "../models/TheatricalWorld";
 import { StoryOrchestrator } from "../models/StoryOrchestrator";
-import { Emotion, CharacterArchetype } from "../types/common";
+import { Emotion } from "../types/common";
 import { CharacterAction, PlaywrightAction } from "../types/actions";
+
+// Type to match the Action interface
+type ActionBase = {
+  actionId: string;
+  timestamp: number;
+};
 
 /**
  * Schemas for LLM responses
@@ -19,14 +25,18 @@ const characterActionSchema = z.object({
   characterId: z.string(),
   speech: z.string().optional(),
   thought: z.string().optional(),
-  emotion: z.string().optional(),
+  emotion: z.nativeEnum(Emotion).optional(),
   movement: z.object({
     x: z.number(),
     y: z.number()
   }).optional(),
   interactionTarget: z.string().optional(),
   interactionType: z.string().optional()
-});
+}).transform(data => ({
+  actionId: Date.now().toString(),
+  timestamp: Date.now(),
+  ...data
+}));
 
 // Schema for director action (formerly playwright action)
 const directorActionSchema = z.object({
@@ -35,19 +45,67 @@ const directorActionSchema = z.object({
   newSceneName: z.string().optional(),
   newSceneDescription: z.string().optional(),
   characterName: z.string().optional(),
-  characterTraits: z.array(z.string()).optional(),
+  characterTraits: z.array(z.string()).optional().default([]),
   characterArchetype: z.string().optional(),
   characterBackstory: z.string().optional(),
   characterAppearance: z.string().optional(),
   characterGoal: z.string().optional(),
-  characterEmotion: z.string().optional(),
+  characterEmotion: z.nativeEnum(Emotion).optional().default(Emotion.NEUTRAL),
   propType: z.string().optional(),
   propName: z.string().optional(),
   propDescription: z.string().optional(),
   propPosition: z.object({
     x: z.number(),
     y: z.number()
-  }).optional()
+  }).optional().default({ x: 50, y: 50 })
+}).transform(action => {
+  const baseAction: ActionBase = {
+    actionId: Date.now().toString(),
+    timestamp: Date.now()
+  };
+
+  if (action.type === 'narration') {
+    return {
+      ...baseAction,
+      narration: action.description
+    };
+  }
+  
+  if (action.type === 'scene_change') {
+    return {
+      ...baseAction,
+      sceneChange: {
+        newSceneId: action.newSceneName!,
+        description: action.newSceneDescription || 'The scene changes.'
+      }
+    };
+  }
+  
+  if (action.type === 'new_character') {
+    return {
+      ...baseAction,
+      newCharacters: [{
+        name: action.characterName!,
+        traits: action.characterTraits,
+        position: { x: 50, y: 50 },
+        initialEmotion: action.characterEmotion || Emotion.NEUTRAL,
+        description: action.characterBackstory || `A new character named ${action.characterName}`
+      }]
+    };
+  }
+  
+  if (action.type === 'new_prop') {
+    return {
+      ...baseAction,
+      newProps: [{
+        propType: action.propType!,
+        position: action.propPosition,
+        description: action.propDescription || `A ${action.propType}`
+      }]
+    };
+  }
+  
+  return baseAction;
 });
 
 // Schema for character turn response
@@ -85,6 +143,9 @@ You are playing the role of a character in an interactive theatrical experience.
 You will be given information about the character you are playing, the scene, and recent events.
 Your task is to generate an action for the character that is consistent with their personality, goals, and the current situation.
 Think like a good improv actor: build on what has happened before, and make choices that create interesting story opportunities.
+
+When specifying emotions, use one of the following values exactly:
+${Object.values(Emotion).join(', ')}
 `;
 
   private readonly DIRECTOR_SYSTEM_PROMPT = `
@@ -97,6 +158,9 @@ Based on this information, you may:
 3. Introduce new characters
 4. Add new props
 5. Direct which character should act next
+
+When specifying character emotions, use one of the following values exactly:
+${Object.values(Emotion).join(', ')}
 `;
 
   /**
@@ -155,6 +219,7 @@ ${context.recentEvents.join("\n")}
 ${userInput ? `USER INPUT: ${userInput}` : ""}
 
 Based on this information, what would your character do next? Consider speech, thoughts, emotions, and actions.
+When specifying an emotion, use one of the following exact values: ${Object.values(Emotion).join(', ')}
 `]
     ]);
     
@@ -169,9 +234,15 @@ Based on this information, what would your character do next? Consider speech, t
       const response = await structuredLLM.invoke(prompt);
       console.log("Character LLM Response:", response);
       
+      // Ensure the characterId from the context is used if not specified
+      const action = {
+        ...response.action,
+        characterId: response.action.characterId || characterId
+      } as CharacterAction;
+      
       return {
         narrativeDescription: response.narrativeDescription,
-        action: this.validateAndTransformCharacterAction(response.action, characterId),
+        action,
         suggestedResponse: response.suggestedResponse
       };
     } catch (error) {
@@ -230,6 +301,8 @@ As the Director, what actions would you take to move the story forward? Consider
 - Adding props that could enhance the scene
 - Deciding which character should act next
 
+When specifying character emotions, use one of the following exact values: ${Object.values(Emotion).join(', ')}
+
 Provide a narrative description and list the actions you want to take.
 `]
     ]);
@@ -247,7 +320,7 @@ Provide a narrative description and list the actions you want to take.
       
       return {
         narrativeDescription: response.narrativeDescription,
-        actions: response.actions.map(action => this.validateAndTransformPlaywrightAction(action)),
+        actions: response.actions as PlaywrightAction[],
         nextCharacterId: response.nextCharacterId
       };
     } catch (error) {
@@ -263,261 +336,5 @@ Provide a narrative description and list the actions you want to take.
         }]
       };
     }
-  }
-  
-  /**
-   * Validate and transform a character action from the LLM
-   */
-  private validateAndTransformCharacterAction(action: any, characterId: string): CharacterAction {
-    const characterAction: CharacterAction = {
-      characterId: action.characterId || characterId,
-      actionId: action.actionId || Date.now().toString(),
-      timestamp: action.timestamp || Date.now()
-    };
-    
-    // Copy speech if provided
-    if (action.speech) {
-      characterAction.speech = action.speech;
-    }
-    
-    // Copy thought if provided
-    if (action.thought) {
-      characterAction.thought = action.thought;
-    }
-    
-    // Map emotion string to Emotion enum
-    if (action.emotion) {
-      const emotion = this.mapToEmotion(action.emotion);
-      if (emotion) {
-        characterAction.emotion = emotion;
-      }
-    }
-    
-    // Copy movement if provided
-    if (action.movement && typeof action.movement.x === 'number' && typeof action.movement.y === 'number') {
-      characterAction.movement = {
-        x: action.movement.x,
-        y: action.movement.y
-      };
-    }
-    
-    // Copy interaction details if provided
-    if (action.interactionTarget && action.interactionType) {
-      characterAction.interactionTarget = action.interactionTarget;
-      characterAction.interactionType = action.interactionType;
-    }
-    
-    return characterAction;
-  }
-  
-  /**
-   * Validate and transform a playwright action from the LLM
-   */
-  private validateAndTransformPlaywrightAction(action: any): PlaywrightAction {
-    const playwrightAction: PlaywrightAction = {
-      actionId: action.actionId || Date.now().toString(),
-      timestamp: action.timestamp || Date.now()
-    };
-    
-    // Handle narration
-    if (action.type === 'narration' && action.description) {
-      playwrightAction.narration = action.description;
-    }
-    
-    // Handle scene change
-    if (action.type === 'scene_change' && action.newSceneName && action.newSceneDescription) {
-      playwrightAction.sceneChange = {
-        newSceneId: action.newSceneName,
-        description: action.newSceneDescription
-      };
-    }
-    
-    // Handle new character
-    if (action.type === 'new_character' && action.characterName) {
-      const newCharacter = {
-        name: action.characterName,
-        traits: action.characterTraits || [],
-        position: { x: 50, y: 50 }, // Default position
-        initialEmotion: this.mapToEmotion(action.characterEmotion) || Emotion.NEUTRAL,
-        description: action.characterBackstory || 'A new character'
-      };
-      
-      playwrightAction.newCharacters = [newCharacter];
-    }
-    
-    // Handle new prop
-    if (action.type === 'new_prop' && action.propType) {
-      const newProp = {
-        propType: action.propType,
-        position: action.propPosition || { x: 50, y: 50 },
-        description: action.propDescription || `A ${action.propType}`
-      };
-      
-      playwrightAction.newProps = [newProp];
-    }
-    
-    return playwrightAction;
-  }
-  
-  /**
-   * Map a string to an Emotion enum value
-   */
-  private mapToEmotion(emotionString: string): Emotion | undefined {
-    const normalized = emotionString.toLowerCase().trim();
-    
-    // Try direct mapping
-    for (const emotion of Object.values(Emotion)) {
-      if (normalized === emotion.toLowerCase()) {
-        return emotion as Emotion;
-      }
-    }
-    
-    // Map common synonyms
-    const synonymMap: Record<string, Emotion> = {
-      'joy': Emotion.HAPPY,
-      'joyful': Emotion.HAPPY,
-      'cheerful': Emotion.HAPPY,
-      'pleased': Emotion.HAPPY,
-      'delighted': Emotion.HAPPY,
-      
-      'melancholy': Emotion.SAD,
-      'gloomy': Emotion.SAD,
-      'depressed': Emotion.SAD,
-      'unhappy': Emotion.SAD,
-      'sorrowful': Emotion.SAD,
-      
-      'furious': Emotion.ANGRY,
-      'mad': Emotion.ANGRY,
-      'enraged': Emotion.ANGRY,
-      'irritated': Emotion.ANGRY,
-      'annoyed': Emotion.ANGRY,
-      
-      'scared': Emotion.AFRAID,
-      'frightened': Emotion.AFRAID,
-      'terrified': Emotion.AFRAID,
-      'anxious': Emotion.AFRAID,
-      'nervous': Emotion.AFRAID,
-      
-      'shocked': Emotion.SURPRISED,
-      'astonished': Emotion.SURPRISED,
-      'amazed': Emotion.SURPRISED,
-      'startled': Emotion.SURPRISED,
-      
-      'repulsed': Emotion.DISGUSTED,
-      'revolted': Emotion.DISGUSTED,
-      'grossed out': Emotion.DISGUSTED,
-      
-      'inquisitive': Emotion.CURIOUS,
-      'interested': Emotion.CURIOUS,
-      'intrigued': Emotion.CURIOUS,
-      
-      'puzzled': Emotion.CONFUSED,
-      'bewildered': Emotion.CONFUSED,
-      'perplexed': Emotion.CONFUSED,
-      
-      'thrilled': Emotion.EXCITED,
-      'enthusiastic': Emotion.EXCITED,
-      'eager': Emotion.EXCITED,
-      
-      'concerned': Emotion.WORRIED,
-      'troubled': Emotion.WORRIED,
-      'uneasy': Emotion.WORRIED,
-      
-      'entertained': Emotion.AMUSED,
-      'humored': Emotion.AMUSED,
-      
-      'resolved': Emotion.DETERMINED,
-      'committed': Emotion.DETERMINED,
-      'steadfast': Emotion.DETERMINED,
-      
-      'satisfied': Emotion.PROUD,
-      'accomplished': Emotion.PROUD,
-      
-      'embarrassed': Emotion.ASHAMED,
-      'humiliated': Emotion.ASHAMED,
-      'regretful': Emotion.ASHAMED,
-      
-      'relaxed': Emotion.CALM,
-      'peaceful': Emotion.CALM,
-      'tranquil': Emotion.CALM,
-      
-      'indifferent': Emotion.NEUTRAL,
-      'impassive': Emotion.NEUTRAL,
-      'stoic': Emotion.NEUTRAL
-    };
-    
-    if (normalized in synonymMap) {
-      return synonymMap[normalized];
-    }
-    
-    // Default fallback
-    console.warn(`Unknown emotion: ${emotionString}, falling back to NEUTRAL`);
-    return Emotion.NEUTRAL;
-  }
-  
-  /**
-   * Map a string to a CharacterArchetype enum value
-   */
-  private mapToArchetype(archetypeString: string): CharacterArchetype | undefined {
-    const normalized = archetypeString.toLowerCase().trim();
-    
-    // Try direct mapping
-    for (const archetype of Object.values(CharacterArchetype)) {
-      if (normalized === archetype.toLowerCase()) {
-        return archetype as CharacterArchetype;
-      }
-    }
-    
-    // Map common synonyms
-    const synonymMap: Record<string, CharacterArchetype> = {
-      'protagonist': CharacterArchetype.HERO,
-      'main character': CharacterArchetype.HERO,
-      'champion': CharacterArchetype.HERO,
-      
-      'joker': CharacterArchetype.TRICKSTER,
-      'prankster': CharacterArchetype.TRICKSTER,
-      'deceiver': CharacterArchetype.TRICKSTER,
-      
-      'mentor': CharacterArchetype.SAGE,
-      'wiseman': CharacterArchetype.SAGE,
-      'teacher': CharacterArchetype.SAGE,
-      'wise one': CharacterArchetype.SAGE,
-      
-      'adventurer': CharacterArchetype.EXPLORER,
-      'wanderer': CharacterArchetype.EXPLORER,
-      'seeker': CharacterArchetype.EXPLORER,
-      
-      'nurturer': CharacterArchetype.CAREGIVER,
-      'helper': CharacterArchetype.CAREGIVER,
-      'healer': CharacterArchetype.CAREGIVER,
-      
-      'artist': CharacterArchetype.CREATOR,
-      'inventor': CharacterArchetype.CREATOR,
-      'innovator': CharacterArchetype.CREATOR,
-      
-      'revolutionary': CharacterArchetype.REBEL,
-      'outlaw': CharacterArchetype.REBEL,
-      'misfit': CharacterArchetype.REBEL,
-      
-      'naive': CharacterArchetype.INNOCENT,
-      'pure': CharacterArchetype.INNOCENT,
-      'child': CharacterArchetype.INNOCENT,
-      
-      'leader': CharacterArchetype.RULER,
-      'boss': CharacterArchetype.RULER,
-      'controller': CharacterArchetype.RULER,
-      
-      'clown': CharacterArchetype.JESTER,
-      'comedian': CharacterArchetype.JESTER,
-      'fool': CharacterArchetype.JESTER
-    };
-    
-    if (normalized in synonymMap) {
-      return synonymMap[normalized];
-    }
-    
-    // No match found
-    console.warn(`Unknown archetype: ${archetypeString}, returning undefined`);
-    return undefined;
   }
 } 
