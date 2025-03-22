@@ -5,8 +5,7 @@ import { EntityRegistry } from '../service/EntityRegistry';
 import { Entity } from './Entity';
 import { InputHandler } from '../service/InputHandler';
 import { AssetRegistry } from '../service/AssetRegistry';
-import { AiConfig } from '../types/common';
-import { Ai } from './Ai';
+import { Ai, AiConfig } from './Ai';
 
 /**
  * Main class representing a theatrical play

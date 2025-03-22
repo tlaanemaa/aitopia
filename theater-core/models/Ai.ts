@@ -1,7 +1,14 @@
 import { z } from "zod";
 import { ChatOllama } from "@langchain/ollama";
 import { ChatPromptValueInterface } from "@langchain/core/prompt_values";
-import { AiConfig } from "../types/common";
+
+/**
+ * Configuration for the AI
+ */
+export interface AiConfig {
+    model: string;
+    baseUrl: string;
+}
 
 export class Ai {
     private llm: ChatOllama;
