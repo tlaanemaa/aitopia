@@ -11,12 +11,12 @@ import { Ai, AiConfig } from './Ai';
  * Main class representing a theatrical play
  */
 export class Play {
+  public readonly ai: Ai;
   private director: Director;
   private turnOrder: Entity[] = [];
   private currentTurnIndex: number = 0;
   private readonly entityRegistry = new EntityRegistry();
   private readonly assetRegistry = new AssetRegistry();
-  private readonly ai: Ai;
   private readonly inputHandler: InputHandler;
   private currentEvents: EnrichedEvent[] = [];
   private currentScene: string = '';

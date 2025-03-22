@@ -11,18 +11,22 @@ export interface AiConfig {
 }
 
 export class Ai {
-    private llm: ChatOllama;
+    public model: string;
+    public baseUrl: string;
 
     constructor(aiConfig: AiConfig) {
-        this.llm = new ChatOllama({
-            baseUrl: aiConfig.baseUrl,
-            model: aiConfig.model,
-        });
+        this.model = aiConfig.model;
+        this.baseUrl = aiConfig.baseUrl;
     }
 
     public async call<T extends z.Schema>(prompt: ChatPromptValueInterface, responseFormat: T): Promise<z.infer<T>> {
+        const llm = new ChatOllama({
+            baseUrl: this.baseUrl,
+            model: this.model,
+        })
+
         console.log("Prompting LLM with:", prompt.toString());
-        const structuredLlm = this.llm.withStructuredOutput(responseFormat);
+        const structuredLlm = llm.withStructuredOutput(responseFormat);
         const response = await structuredLlm.invoke(prompt);
         console.log("LLM responded with:", response);
         return response;
