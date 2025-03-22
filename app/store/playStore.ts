@@ -18,6 +18,7 @@ interface PlayStore {
     flagToStop: boolean;
 
     // Actions
+    isStarted: () => boolean;
     initialize: () => void;
     queueInput: (input: string) => void;
     startLoop: () => Promise<void>;
@@ -38,6 +39,11 @@ export const usePlayStore = create<PlayStore>()(
         turnCount: 0,
         isProcessing: false,
         flagToStop: false,
+
+        isStarted: () => {
+            const { play, turnCount } = get();
+            return play !== null && turnCount > 0;
+        },
 
         initialize() {
             const settings = getSettings();
