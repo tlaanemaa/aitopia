@@ -1,98 +1,189 @@
 /**
- * Event types for the theater-core domain
+ * LLM facing event types for the theater-core domain
  */
-import { Position } from './common';
+import { z } from 'zod';
+
+// ================ Core Types ================
+/**
+ * Position in 2D space
+ */
+export const PositionSchema = z.object({
+  x: z.number().describe('Horizontal position in the scene'),
+  y: z.number().describe('Vertical position in the scene')
+});
 
 /**
- * Base event interface
+ * Direction in 2D space
  */
-export interface WorldEvent {
-  id: string;
-  type: string;  // Type of event (movement, speech, entrance, exit, etc.)
-  description: string;
-  timestamp: number;
-  location: Position;
-  isGlobal: boolean;  // Whether all characters can observe it regardless of position
-  involvedCharacterIds: string[];
-  involvedObjectIds: string[];
-}
+export const DirectionSchema = z.enum([
+  'north',
+  'south',
+  'east',
+  'west',
+  'northeast',
+  'northwest',
+  'southeast',
+  'southwest'
+]).describe('Cardinal and intercardinal directions in the scene');
 
 /**
- * Movement event when a character changes position
+ * Character traits
  */
-export interface MovementEvent extends WorldEvent {
-  type: 'movement';
-  characterId: string;
-  fromPosition: Position;
-  toPosition: Position;
-}
+export const TraitSchema = z.enum([
+  // Perception traits
+  'perceptive',      // Better at noticing things (increases sight and hearing)
+  'oblivious',       // Poor at noticing things (decreases sight and hearing)
+
+  // Emotional traits
+  'empath',          // Better at sensing emotions (increases emotion)
+  'stoic',           // Poor at sensing emotions (decreases emotion)
+
+  // Combined traits
+  'aware',           // Good at all perception (increases all)
+  'unaware'          // Poor at all perception (decreases all)
+]).describe('Traits of a character');
 
 /**
- * Speech event when a character speaks
+ * Base event type
  */
-export interface SpeechEvent extends WorldEvent {
-  type: 'speech';
-  characterId: string;
-  content: string;
-  volume: number; // 0-1, affects how far it can be heard
-}
+export const BaseEventSchema = z.object({
+  type: z.string().describe('Type of the event'),
+});
+
+// ================ Movement System ================
+/**
+ * Types of movement a character can perform
+ */
+export const MovementTypeSchema = z.enum([
+  'walk',      // Normal walking speed
+  'run',       // Fast movement
+  'jump',      // Jump to a position
+  'dash',      // Quick burst of speed
+]).describe('Different types of movement a character can perform');
 
 /**
- * Entrance event when a new character enters the scene
+ * Movement event data
  */
-export interface EntranceEvent extends WorldEvent {
-  type: 'entrance';
-  characterId: string;
-  entrancePosition: Position;
-}
+export const MovementEventSchema = BaseEventSchema.extend({
+  type: z.literal('movement'),
+  movementType: MovementTypeSchema.describe('The type of movement being performed'),
+  direction: DirectionSchema.describe('The direction the character is moving')
+}).describe('Event to describe a character movement');
+
+// ================ Character Actions ================
+/**
+ * Action event data
+ */
+export const ActionEventSchema = BaseEventSchema.extend({
+  type: z.literal('action'),
+  action: z.string()
+    .describe('Detailed past tense description of the action being performed, including the direction and target when relevant.')
+}).describe('Event to describe a character action');
 
 /**
- * Exit event when a character leaves the scene
+ * Speech event data
  */
-export interface ExitEvent extends WorldEvent {
-  type: 'exit';
-  characterId: string;
-  exitPosition: Position;
-}
+export const SpeechEventSchema = BaseEventSchema.extend({
+  type: z.literal('speech'),
+  content: z.string().describe('The actual words being spoken'),
+  targetName: z.string().optional().describe('Name of the character being spoken to')
+}).describe('Event to describe a character speech');
 
 /**
- * Interaction event when a character interacts with an object
+ * Emotion event data
  */
-export interface InteractionEvent extends WorldEvent {
-  type: 'interaction';
-  characterId: string;
-  objectId: string;
-  interactionType: string; // e.g., "pick_up", "sit_on", "open", etc.
-}
+export const EmotionEventSchema = BaseEventSchema.extend({
+  type: z.literal('emotion'),
+  emotion: z.string().describe('The emotion being expressed (e.g., "happy", "sad", "angry")'),
+}).describe('Event to describe a character emotion');
 
 /**
- * Scene change event
+ * Thought event data
  */
-export interface SceneChangeEvent extends WorldEvent {
-  type: 'scene_change';
-  previousSceneId?: string;
-  newSceneId: string;
-  transitionDescription: string;
-}
+export const ThoughtEventSchema = BaseEventSchema.extend({
+  type: z.literal('thought'),
+  content: z.string().describe('The thought content')
+}).describe('Event to describe a character thought');
 
 /**
- * Emotional reaction event
+ * Character event data as a union of all possible event types
  */
-export interface EmotionalEvent extends WorldEvent {
-  type: 'emotional';
-  characterId: string;
-  emotion: string;
-  intensity: number; // 0-10
-  trigger?: string;
-}
+export const CharacterEventSchema = z.union([
+  ActionEventSchema,
+  SpeechEventSchema,
+  EmotionEventSchema,
+  MovementEventSchema,
+  ThoughtEventSchema
+]).describe('Union of all possible character event types');
+
+// ================ World Events ================
+/**
+ * Scene change event data
+ */
+export const SceneChangeEventSchema = BaseEventSchema.extend({
+  type: z.literal('scene_change'),
+  newSceneDescription: z.string().describe('Description of the new scene')
+}).describe('Event to describe a scene change');
 
 /**
- * Event when a relationship changes between characters
+ * Character enter event data
+ * TODO: This needs more character data to actually set the character up properly.
  */
-export interface RelationshipEvent extends WorldEvent {
-  type: 'relationship';
-  characterId1: string;
-  characterId2: string;
-  relationshipChange: 'improved' | 'worsened' | 'established' | 'broken';
-  intensity: number; // 0-10
-} 
+export const CharacterEnterEventSchema = BaseEventSchema.extend({
+  type: z.literal('character_enter'),
+  characterId: z.string().describe('ID of the character entering the scene'),
+  position: PositionSchema.describe('Position where the character enters'),
+  traits: TraitSchema.array().describe('Traits of the character entering the scene'),
+  description: z.string().optional().describe('Optional description of how the character enters')
+}).describe('Event to describe a character entering the scene');
+
+/**
+ * Character exit event data
+ */
+export const CharacterExitEventSchema = BaseEventSchema.extend({
+  type: z.literal('character_exit'),
+  characterId: z.string().describe('ID of the character exiting the scene'),
+  description: z.string().optional().describe('Optional description of how the character exits')
+}).describe('Event to describe a character exiting the scene');
+
+/**
+ * Generic world event data
+ */
+export const GenericWorldEventSchema = BaseEventSchema.extend({
+  type: z.literal('generic'),
+  description: z.string().describe('Description of the world event')
+}).describe('Event to describe a generic world event');
+
+/**
+ * World event data as a union of all possible event types
+ */
+export const WorldEventSchema = z.union([
+  SceneChangeEventSchema,
+  CharacterEnterEventSchema,
+  CharacterExitEventSchema,
+  GenericWorldEventSchema
+]).describe('Union of all possible world event types');
+
+// ================ Type Exports ================
+export type Position = z.infer<typeof PositionSchema>;
+export type Direction = z.infer<typeof DirectionSchema>;
+export type MovementType = z.infer<typeof MovementTypeSchema>;
+export type Trait = z.infer<typeof TraitSchema>;
+export type BaseEvent = z.infer<typeof BaseEventSchema>;
+export type CharacterEvent = z.infer<typeof CharacterEventSchema>;
+export type WorldEvent = z.infer<typeof WorldEventSchema>;
+export type AnyEvent = CharacterEvent | WorldEvent;
+
+// ================ Internally enriched event types ================
+export type EnrichedCharacterEvent = CharacterEvent & {
+  sourceId: string;
+  position: Position;
+};
+
+export type EnrichedWorldEvent = WorldEvent & {
+  sourceId: string;
+  position?: Position;
+};
+
+export type EnrichedEvent = EnrichedCharacterEvent | EnrichedWorldEvent;
+
