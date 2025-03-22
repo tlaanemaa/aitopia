@@ -40,7 +40,9 @@ export class InputHandler {
     }
 
     public async handleInput(input: string[]): Promise<EnrichedEvent[]> {
-        const prompt = await promptTemplate.invoke({ input: input.map(i => `- ${i}`).join('\n') });
+        const prompt = await promptTemplate.invoke({
+            input: input.map(i => `- ${i.trim()}`).join('\n')
+        });
         const response = await this.ai.call(prompt, this.buildResponseFormat());
         // Map over the response and replace the names with ids and positions
         const enrichedEvents = response.map(event => {

@@ -111,7 +111,7 @@ export class Play {
       this.isProcessing = true;
       this.currentEvents = [];
       // Get current entity and their events
-      this.currentEvents = input
+      this.currentEvents = input && input.length > 0
         ? await this.inputHandler.handleInput(input)
         : await this.currentTurnEntity.takeTurn();
 
