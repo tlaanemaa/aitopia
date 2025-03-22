@@ -83,14 +83,26 @@ export class Play {
   }
 
   /**
-   * Play the next turn automatically
+   * Go to the next turn
    */
-  public async nextTurn(): Promise<EnrichedEvent[]> {
+  public nextTurn() {
+    this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.length;
+  }
+
+  /**
+   * Get the current turn entity
+   */
+  public get currentTurnEntity() {
+    return this.turnOrder[this.currentTurnIndex];
+  }
+
+  /**
+   * Process the 
+   */
+  public async processTurn(): Promise<EnrichedEvent[]> {
     // Get current entity and their events
     this.currentEvents = [];
-    this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.length;
-    const currentEntity = this.turnOrder[this.currentTurnIndex];
-    this.currentEvents = await currentEntity.takeTurn();
+    this.currentEvents = await this.currentTurnEntity.takeTurn();
 
     // Handle internally and return events
     this.handleEvents();
