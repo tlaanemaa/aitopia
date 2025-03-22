@@ -3,45 +3,23 @@ import { Character } from './Character';
 import { EnrichedEvent, CharacterEnterEvent } from '../types/events';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { Entity } from './Entity';
-import { wait } from '../utils/util';
+import { InputHandler } from '../service/InputHandler';
 
 /**
  * Main class representing a theatrical play
  */
 export class Play {
   private director: Director;
-  private readonly entityRegistry = new EntityRegistry();
-  private isRunning: boolean = false;
-  private currentTurnIndex: number = 0;
   private characters: Character[] = [];
   private turnOrder: Entity[] = [];
-  public playPromise?: Promise<string>;
+  private currentTurnIndex: number = 0;
+  private readonly inputHandler = new InputHandler();
+  private readonly entityRegistry = new EntityRegistry();
 
   constructor(seedEvents: EnrichedEvent[]) {
     this.director = new Director(this.entityRegistry);
     this.turnOrder = [this.director];
     this.handleEvents(seedEvents);
-  }
-
-  /**
-   * Start running the play
-   */
-  public start(): Promise<string> {
-    if (this.isRunning) throw new Error('Play is already running!');
-    this.isRunning = true;
-    this.playPromise = this.run().finally(() => {
-      this.isRunning = false;
-      this.playPromise = undefined;
-    });
-    return this.playPromise;
-  }
-
-  /**
-   * Stop the play
-   */
-  public async stop(): Promise<string | undefined> {
-    this.isRunning = false;
-    return this.playPromise;
   }
 
   private addCharacter(charConfig: CharacterEnterEvent): void {
@@ -81,27 +59,23 @@ export class Play {
       .forEach(event => this.removeCharacter(event.characterId));
   }
 
-  /**
-   * Run the play until it is stopped
-   */
-  public async run(): Promise<string> {
-    while (this.isRunning) {
-      // Calculate turn start time
-      const turnStartTime = Date.now();
+  public async nextTurn(): Promise<EnrichedEvent[]> {
+    // Get current entity and their events
+    this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.length;
+    const currentEntity = this.turnOrder[this.currentTurnIndex];
+    const events = await currentEntity.takeTurn();
 
-      // Get current entity and their events
-      this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.length;
-      const currentEntity = this.turnOrder[this.currentTurnIndex];
-      const events = await currentEntity.takeTurn();
+    // Handle internally and return events
+    this.handleEvents(events);
+    return events;
+  }
 
-      // Handle events
-      this.handleEvents(events);
+  public async handleInput(input: string): Promise<EnrichedEvent[]> {
+    // Turn input into events
+    const events = await this.inputHandler.handleInput(input);
 
-      // Little delay to prevent spamming
-      const turnDuration = Date.now() - turnStartTime;
-      if (turnDuration < 1000) await wait(100);
-    }
-
-    return "Play is stopped!";
+    // Handle internally and return events
+    this.handleEvents(events);
+    return events;
   }
 } 
