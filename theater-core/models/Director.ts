@@ -12,10 +12,13 @@ The characters in the play have a mind of their own, but you can influence them 
 `;
 
 const TASK_PROMPT = `
+This is the current scene description:
+{scene}
+
 This is the current state of the play:
 {state}
 
-What do you want to do next?
+What do you want to do next? Keep it engaging and interesting!
 `;
 
 const promptTemplate = ChatPromptTemplate.fromMessages([
@@ -47,7 +50,8 @@ export class Director extends Entity {
  */
   public async takeTurn(): Promise<EnrichedEvent[]> {
     const prompt = await promptTemplate.invoke({
-      state: this.getMemories(),
+      state: this.memory.getMemories(),
+      scene: this.memory.scene,
     });
     const response = await this.ai.call(prompt, this.buildResponseFormat());
     // Map over the response and replace the names with ids and positions
@@ -75,36 +79,37 @@ export class Director extends Entity {
       if (!subject) return;
       switch (event.type) {
         case 'action':
-          this.addMemory(`${subject.name} performed action: ${event.action}`);
+          this.memory.add(`${subject.name} performed action: ${event.action}`);
           break;
         case 'speech':
-          this.addMemory(`${subject.name} said: ${event.content}`);
+          this.memory.add(`${subject.name} said: ${event.content}`);
           break;
         case 'emotion':
-          this.addMemory(`${subject.name} felt: ${event.emotion}`);
+          this.memory.add(`${subject.name} felt: ${event.emotion}`);
           break;
         case 'movement':
-          this.addMemory(`${subject.name} moved to ${event.position}`);
+          this.memory.add(`${subject.name} moved to ${event.position}`);
           break;
         case 'thought':
-          this.addMemory(`${subject.name} thought: ${event.content}`);
+          this.memory.add(`${subject.name} thought: ${event.content}`);
           break;
       }
     } else {
       switch (event.type) {
         case 'scene_change':
-          this.addMemory(`The scene changed to ${event.newSceneDescription}`);
+          this.memory.add(`The scene changed to ${event.newSceneDescription}`);
+          this.memory.setScene(event.newSceneDescription);
           break;
         case 'character_enter':
-          this.addMemory(`${event.name} entered the scene`);
+          this.memory.add(`${event.name} entered the scene`);
           break;
         case 'character_exit':
           const character = this.entityRegistry.getEntity(event.characterId);
           if (!character) return;
-          this.addMemory(`${character.name} exited the scene`);
+          this.memory.add(`${character.name} exited the scene`);
           break;
         case 'generic':
-          this.addMemory(`${event.description}`);
+          this.memory.add(`${event.description}`);
           break;
       }
     }

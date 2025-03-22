@@ -17,6 +17,7 @@ export class Play {
   private readonly assetRegistry = new AssetRegistry();
   private readonly inputHandler = new InputHandler(this.entityRegistry, this.assetRegistry);
   private currentEvents: EnrichedEvent[] = [];
+  private currentScene: string = '';
 
   /**
    * Constructor for the Play class
@@ -58,6 +59,11 @@ export class Play {
     this.currentEvents
       .filter(event => event.type === 'character_enter')
       .forEach(event => this.addCharacter(event));
+
+    // Handle scene changes
+    this.currentEvents
+      .filter(event => event.type === 'scene_change')
+      .forEach(event => this.currentScene = event.newSceneDescription);
 
     // Propagate events to all characters
     this.currentEvents.forEach(event => {
@@ -114,6 +120,10 @@ export class Play {
       speech: speechEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
       thought: thoughtEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
     }));
-    return characters;
+
+    return {
+      characters,
+      scene: this.currentScene,
+    };
   }
 }

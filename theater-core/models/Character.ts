@@ -18,6 +18,10 @@ import { AssetRegistry } from '../service/AssetRegistry';
 const SYSTEM_PROMPT = `
 You are a character named {name}.
 Always respond as {name} and describe your actions in the first person.
+
+You are currently in this scene:
+{scene}
+
 Your backstory is:
 {backstory}
 `;
@@ -66,7 +70,8 @@ export class Character extends Entity {
         const prompt = await promptTemplate.invoke({
             name: this.name,
             backstory: this.backstory,
-            memories: this.getMemories(),
+            scene: this.memory.scene,
+            memories: this.memory.getMemories(),
             position: this.position,
             emotion: this.emotion,
             time: new Date().toTimeString()
@@ -119,9 +124,9 @@ export class Character extends Entity {
         const source = this.entityRegistry.getEntity(event.sourceId)
         if (!source) return;
         if (source.id === this.id) {
-            this.addMemory(`I ${event.action.toLowerCase()}`);
+            this.memory.add(`I ${event.action.toLowerCase()}`);
         } else if (isInRange(event.position, this.position, this.perception.radius.sight)) {
-            this.addMemory(`${source.name} ${event.action.toLowerCase()}`);
+            this.memory.add(`${source.name} ${event.action.toLowerCase()}`);
         }
     }
 
@@ -129,9 +134,9 @@ export class Character extends Entity {
         const source = this.entityRegistry.getEntity(event.sourceId)
         if (!source) return;
         if (source.id === this.id) {
-            this.addMemory(`I said: "${event.content}" ${event.targetName ? `to ${event.targetName}` : ''}`);
+            this.memory.add(`I said: "${event.content}" ${event.targetName ? `to ${event.targetName}` : ''}`);
         } else if (isInRange(event.position, this.position, this.perception.radius.hearing)) {
-            this.addMemory(`${source.name} said: "${event.content}" ${event.targetName ? `to ${event.targetName}` : ''}`);
+            this.memory.add(`${source.name} said: "${event.content}" ${event.targetName ? `to ${event.targetName}` : ''}`);
         }
     }
 
@@ -140,9 +145,9 @@ export class Character extends Entity {
         if (!source) return;
         this.emotion = event.emotion;
         if (source.id === this.id) {
-            this.addMemory(`I am feeling ${event.emotion}`);
+            this.memory.add(`I am feeling ${event.emotion}`);
         } else if (isInRange(event.position, this.position, this.perception.radius.emotion)) {
-            this.addMemory(`${source.name} is feeling ${event.emotion}`);
+            this.memory.add(`${source.name} is feeling ${event.emotion}`);
         }
     }
 
@@ -151,9 +156,9 @@ export class Character extends Entity {
         if (!source) return;
         this.position = event.position;
         if (source.id === this.id) {
-            this.addMemory(`I moved to position (${event.position.x}, ${event.position.y})`);
+            this.memory.add(`I moved to position (${event.position.x}, ${event.position.y})`);
         } else if (isInRange(event.position, this.position, this.perception.radius.sight)) {
-            this.addMemory(`${source.name} moved to position (${event.position.x}, ${event.position.y})`);
+            this.memory.add(`${source.name} moved to position (${event.position.x}, ${event.position.y})`);
         }
     }
 
@@ -161,24 +166,25 @@ export class Character extends Entity {
         const source = this.entityRegistry.getEntity(event.sourceId)
         if (!source) return;
         if (source.id === this.id) {
-            this.addMemory(`I thought: "${event.content}"`);
+            this.memory.add(`I thought: "${event.content}"`);
         }
     }
 
     private handleSceneChange(event: Extract<WorldEvent, { type: 'scene_change' }>): void {
-        this.addMemory(`Suddenly, the scene has changed to: ${event.newSceneDescription}`);
+        this.memory.add(`Suddenly, the scene has changed to: ${event.newSceneDescription}`);
+        this.memory.setScene(event.newSceneDescription);
     }
 
     private handleCharacterEnter(event: Extract<WorldEvent, { type: 'character_enter' }>): void {
-        this.addMemory(`${event.name} has appeared`);
+        this.memory.add(`${event.name} has appeared`);
     }
 
     private handleCharacterExit(event: Extract<WorldEvent, { type: 'character_exit' }>): void {
         const source = this.entityRegistry.getEntity(event.characterId)!
-        this.addMemory(`${source.name} has left`);
+        this.memory.add(`${source.name} has left`);
     }
 
     private handleGeneric(event: Extract<WorldEvent, { type: 'generic' }>): void {
-        this.addMemory(`${event.description}`);
+        this.memory.add(`${event.description}`);
     }
 }
