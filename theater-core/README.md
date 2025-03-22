@@ -18,6 +18,7 @@ This module implements a domain model for an interactive theatrical storytelling
 - **service/** - Service layer:
   - `EntityRegistry`: Manages all entities in the world
   - `InputHandler`: Processes external input into events
+  - `AssetRegistry`: Manages visual assets like character avatars
 
 - **utils/** - Utility functions:
   - Distance calculations, range checking, and timing utilities
@@ -46,6 +47,17 @@ Every entity uses a language model to make decisions:
 - The Director guides the narrative based on all observed events
 - User input is interpreted and converted into appropriate events
 
+### Visual Representation
+Characters have visual representations through:
+- Avatars assigned during creation
+- Position in 2D space for spatial relationships
+- Emotional states that can be visualized
+
+### UI Integration
+The system provides a clean state interface for UI integration:
+- `Play.getState()` returns the current state of all characters
+- Avatar management for consistent visual identity
+
 ## Usage
 
 The primary entry point is the `Play` class, which orchestrates the theatrical experience. Instantiate it with initial seed events, then use `nextTurn()` and `handleInput()` to progress the narrative.
@@ -53,8 +65,11 @@ The primary entry point is the `Play` class, which orchestrates the theatrical e
 ```typescript
 import { Play } from 'theater-core';
 
+// List of available avatars
+const avatars = ['alice.png', 'bob.png', 'charlie.png'];
+
 // Create a new play with initial scene
-const play = new Play([
+const play = new Play(avatars, [
   { 
     type: 'scene_change', 
     newSceneDescription: 'A dimly lit tavern with a crackling fireplace' 
@@ -66,4 +81,7 @@ const events = await play.nextTurn();
 
 // Handle user input
 await play.handleInput(['Add a mysterious stranger at the door']);
+
+// Get current state for UI rendering
+const state = play.getState();
 ``` 
