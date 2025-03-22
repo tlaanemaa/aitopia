@@ -20,6 +20,7 @@ export class Play {
   private readonly inputHandler: InputHandler;
   private currentEvents: EnrichedEvent[] = [];
   private currentScene: string = '';
+  private isProcessing: boolean = false;
 
   /**
    * Constructor for the Play class
@@ -100,13 +101,21 @@ export class Play {
    * Process the 
    */
   public async processTurn(): Promise<EnrichedEvent[]> {
-    // Get current entity and their events
-    this.currentEvents = [];
-    this.currentEvents = await this.currentTurnEntity.takeTurn();
+    // If we're already processing, return
+    if (this.isProcessing) return [];
 
-    // Handle internally and return events
-    this.handleEvents();
-    return this.currentEvents;
+    try {
+      this.isProcessing = true;
+      this.currentEvents = [];
+      // Get current entity and their events
+      this.currentEvents = await this.currentTurnEntity.takeTurn();
+
+      // Handle internally and return events
+      this.handleEvents();
+      return this.currentEvents;
+    } finally {
+      this.isProcessing = false;
+    }
   }
 
   /**
