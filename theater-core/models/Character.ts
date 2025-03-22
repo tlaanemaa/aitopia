@@ -2,10 +2,11 @@ import {
     EnrichedCharacterEvent,
     EnrichedEvent,
     Position,
-    Trait
+    Trait,
+    WorldEvent
 } from '../types/events';
-import { isInRange } from '../utils/spatial';
-import { entityRegistry } from '../service/EntityRegistry';
+import { isInRange } from '../utils/util';
+import { EntityRegistry } from '../service/EntityRegistry';
 import { Entity } from './Entity';
 import { Perception } from './Perception';
 
@@ -22,12 +23,14 @@ export class Character extends Entity {
     private memory: MemoryItem[] = [];
 
     constructor(
+        entityRegistry: EntityRegistry,
         public readonly name: string,
         public position: Position = { x: 50, y: 50 },
+        public traits: Trait[] = [],
         public emotion: string = 'neutral',
-        public traits: Trait[] = []
+        public backstory?: string
     ) {
-        super();
+        super(entityRegistry);
         this.perception = new Perception(traits);
     }
 
@@ -47,41 +50,40 @@ export class Character extends Entity {
      * Handle events propagated to this character
      */
     handleEvent(event: EnrichedEvent): void {
-        const source = entityRegistry.getEntity(event.sourceId)
-        if (!source) return;
-
         switch (event.type) {
             case 'action':
-                this.handleAction(event, source);
+                this.handleAction(event);
                 break;
             case 'speech':
-                this.handleSpeech(event, source);
+                this.handleSpeech(event);
                 break;
             case 'emotion':
-                this.handleEmotion(event, source);
+                this.handleEmotion(event);
                 break;
             case 'movement':
-                this.handleMovement(event, source);
+                this.handleMovement(event);
                 break;
             case 'thought':
-                this.handleThought(event, source);
+                this.handleThought(event);
                 break;
             case 'scene_change':
                 this.handleSceneChange(event);
                 break;
             case 'character_enter':
-                this.handleCharacterEnter(event, source);
+                this.handleCharacterEnter(event);
                 break;
             case 'character_exit':
-                this.handleCharacterExit(event, source);
+                this.handleCharacterExit(event);
                 break;
             case 'generic':
-                this.handleGeneric(event, source);
+                this.handleGeneric(event);
                 break;
         }
     }
 
-    private handleAction(event: Extract<EnrichedEvent, { type: 'action' }>, source: Entity): void {
+    private handleAction(event: Extract<EnrichedCharacterEvent, { type: 'action' }>): void {
+        const source = this.entityRegistry.getEntity(event.sourceId)
+        if (!source) return;
         if (source.id === this.id) {
             this.addMemory(`I ${event.action.toLowerCase()}`);
         } else if (isInRange(event.position, this.position, this.perception.radius.sight)) {
@@ -89,7 +91,9 @@ export class Character extends Entity {
         }
     }
 
-    private handleSpeech(event: Extract<EnrichedEvent, { type: 'speech' }>, source: Entity): void {
+    private handleSpeech(event: Extract<EnrichedCharacterEvent, { type: 'speech' }>): void {
+        const source = this.entityRegistry.getEntity(event.sourceId)
+        if (!source) return;
         if (source.id === this.id) {
             this.addMemory(`I said: "${event.content}" ${event.targetName ? `to ${event.targetName}` : ''}`);
         } else if (isInRange(event.position, this.position, this.perception.radius.hearing)) {
@@ -97,7 +101,9 @@ export class Character extends Entity {
         }
     }
 
-    private handleEmotion(event: Extract<EnrichedEvent, { type: 'emotion' }>, source: Entity): void {
+    private handleEmotion(event: Extract<EnrichedCharacterEvent, { type: 'emotion' }>): void {
+        const source = this.entityRegistry.getEntity(event.sourceId)
+        if (!source) return;
         this.emotion = event.emotion;
         if (source.id === this.id) {
             this.addMemory(`I am feeling ${event.emotion}`);
@@ -106,7 +112,9 @@ export class Character extends Entity {
         }
     }
 
-    private handleMovement(event: Extract<EnrichedEvent, { type: 'movement' }>, source: Entity): void {
+    private handleMovement(event: Extract<EnrichedCharacterEvent, { type: 'movement' }>): void {
+        const source = this.entityRegistry.getEntity(event.sourceId)
+        if (!source) return;
         this.position = event.position;
         if (source.id === this.id) {
             this.addMemory(`I moved to position (${event.position.x}, ${event.position.y})`);
@@ -115,29 +123,28 @@ export class Character extends Entity {
         }
     }
 
-    private handleThought(event: Extract<EnrichedEvent, { type: 'thought' }>, source: Entity): void {
+    private handleThought(event: Extract<EnrichedCharacterEvent, { type: 'thought' }>): void {
+        const source = this.entityRegistry.getEntity(event.sourceId)
+        if (!source) return;
         if (source.id === this.id) {
             this.addMemory(`I thought: "${event.content}"`);
         }
     }
 
-    private handleSceneChange(event: Extract<EnrichedEvent, { type: 'scene_change' }>): void {
-        this.addMemory(`Suddenly, the scene changed to: ${event.newSceneDescription}`);
+    private handleSceneChange(event: Extract<WorldEvent, { type: 'scene_change' }>): void {
+        this.addMemory(`Suddenly, the scene has changed to: ${event.newSceneDescription}`);
     }
 
-    private handleCharacterEnter(event: Extract<EnrichedEvent, { type: 'character_enter' }>, source: Entity): void {
-        this.addMemory(`${source.name} has appeared`);
+    private handleCharacterEnter(event: Extract<WorldEvent, { type: 'character_enter' }>): void {
+        this.addMemory(`${event.name} has appeared`);
     }
 
-    private handleCharacterExit(event: Extract<EnrichedEvent, { type: 'character_exit' }>, source: Entity): void {
+    private handleCharacterExit(event: Extract<WorldEvent, { type: 'character_exit' }>): void {
+        const source = this.entityRegistry.getEntity(event.characterId)!
         this.addMemory(`${source.name} has left`);
     }
 
-    private handleGeneric(event: Extract<EnrichedEvent, { type: 'generic' }>, source: Entity): void {
-        if (source.id === this.id) {
-            this.addMemory(`${event.description}`);
-        } else {
-            this.addMemory(`${source.name}: ${event.description}`);
-        }
+    private handleGeneric(event: Extract<WorldEvent, { type: 'generic' }>): void {
+        this.addMemory(`${event.description}`);
     }
 }

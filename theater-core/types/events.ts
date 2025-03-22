@@ -131,8 +131,9 @@ export const SceneChangeEventSchema = BaseEventSchema.extend({
  */
 export const CharacterEnterEventSchema = BaseEventSchema.extend({
   type: z.literal('character_enter'),
-  characterId: z.string().describe('ID of the character entering the scene'),
+  name: z.string().describe('Name of the character entering the scene'),
   position: PositionSchema.describe('Position where the character enters'),
+  backstory: z.string().optional().describe('Backstory of the character entering the scene'),
   traits: TraitSchema.array().describe('Traits of the character entering the scene'),
   description: z.string().optional().describe('Optional description of how the character enters')
 }).describe('Event to describe a character entering the scene');
@@ -172,6 +173,9 @@ export type Trait = z.infer<typeof TraitSchema>;
 export type BaseEvent = z.infer<typeof BaseEventSchema>;
 export type CharacterEvent = z.infer<typeof CharacterEventSchema>;
 export type WorldEvent = z.infer<typeof WorldEventSchema>;
+export type CharacterEnterEvent = z.infer<typeof CharacterEnterEventSchema>;
+export type CharacterExitEvent = z.infer<typeof CharacterExitEventSchema>;
+export type GenericWorldEvent = z.infer<typeof GenericWorldEventSchema>;
 export type AnyEvent = CharacterEvent | WorldEvent;
 
 // ================ Internally enriched event types ================
@@ -180,10 +184,5 @@ export type EnrichedCharacterEvent = CharacterEvent & {
   position: Position;
 };
 
-export type EnrichedWorldEvent = WorldEvent & {
-  sourceId: string;
-  position?: Position;
-};
-
-export type EnrichedEvent = EnrichedCharacterEvent | EnrichedWorldEvent;
+export type EnrichedEvent = EnrichedCharacterEvent | WorldEvent;
 

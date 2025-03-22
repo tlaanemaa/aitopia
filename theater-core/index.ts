@@ -8,22 +8,4 @@
 
 // Main entry point
 export { Play } from './models/Play';
-export type { PlayConfig, CharacterConfig } from './models/Play';
-
-// Core models (exposed for type information)
-export { Director } from './models/Director';
-export { Character } from './models/Character';
-export { Entity } from './models/Entity';
-
-// Core types
-export type { Position, Emotion } from './types/common';
-export type {
-    Event,
-    CharacterEvent,
-    WorldEvent,
-    CharacterEventType,
-    WorldEventType
-} from './types/events';
-
-// Utilities
-export { calculateDistance, isInRange } from './utils/spatial'; 
+export type { EnrichedEvent, CharacterEnterEvent } from './types/events';

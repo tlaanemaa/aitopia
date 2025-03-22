@@ -14,4 +14,11 @@ export function calculateDistance(pos1: Position, pos2: Position): number {
  */
 export function isInRange(pos1: Position, pos2: Position, range: number): boolean {
   return calculateDistance(pos1, pos2) <= range;
-} 
+}
+
+/**
+ * Wait for a given number of milliseconds
+ */
+export function wait(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

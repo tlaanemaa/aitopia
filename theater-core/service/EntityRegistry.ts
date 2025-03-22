@@ -1,19 +1,21 @@
 import { Entity } from "../models/Entity";
 
-class EntityRegistry {
+export class EntityRegistry {
     private entities: Map<string, Entity> = new Map();
 
     register(entity: Entity): void {
         this.entities.set(entity.id, entity);
     }
 
-    getEntity(id: string): Entity | undefined {
-        return this.entities.get(id);
+    deregister(entityId: string): void {
+        this.entities.delete(entityId);
     }
 
-    clear(): void {
-        this.entities.clear();
+    getEntity(entityId: string): Entity | undefined {
+        return this.entities.get(entityId);
+    }
+
+    getEntities(): Entity[] {
+        return Array.from(this.entities.values());
     }
 }
-
-export const entityRegistry = new EntityRegistry();
