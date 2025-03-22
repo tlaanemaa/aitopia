@@ -98,9 +98,12 @@ export class Play {
   }
 
   /**
-   * Process the 
+   * Process the current turn, either handling user input if provided or letting the current character
+   * take their regular turn. This advances the story state and triggers any resulting events.
+   * 
+   * @param input - Optional array of strings for user input to process this turn
    */
-  public async processTurn(): Promise<EnrichedEvent[]> {
+  public async processTurn(input: string[] = []): Promise<EnrichedEvent[]> {
     // If we're already processing, return
     if (this.isProcessing) return [];
 
@@ -108,7 +111,9 @@ export class Play {
       this.isProcessing = true;
       this.currentEvents = [];
       // Get current entity and their events
-      this.currentEvents = await this.currentTurnEntity.takeTurn();
+      this.currentEvents = input
+        ? await this.inputHandler.handleInput(input)
+        : await this.currentTurnEntity.takeTurn();
 
       // Handle internally and return events
       this.handleEvents();
@@ -116,20 +121,6 @@ export class Play {
     } finally {
       this.isProcessing = false;
     }
-  }
-
-  /**
-   * Process user input into the play.
-   * This does not trigger a turn, but is processed in a similar way.
-   */
-  public async handleInput(input: string[]): Promise<EnrichedEvent[]> {
-    // Turn input into events
-    this.currentEvents = [];
-    this.currentEvents = await this.inputHandler.handleInput(input);
-
-    // Handle internally and return events
-    this.handleEvents();
-    return this.currentEvents;
   }
 
   /**
