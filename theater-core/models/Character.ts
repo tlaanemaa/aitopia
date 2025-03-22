@@ -9,9 +9,10 @@ import { isInRange } from '../utils/util';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { Perception } from './Perception';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
-import { LlmEntity } from './LlmEntity';
+import { Entity } from './Entity';
 import { z } from 'zod';
 import { CharacterEventSchema } from '../types/events';
+import { Ai } from './Ai';
 
 const SYSTEM_PROMPT = `
 You are a character named {name}.
@@ -39,8 +40,9 @@ const responseFormat = z.array(CharacterEventSchema).describe('Array of events d
 /**
  * Character class - Can only produce character events
  */
-export class Character extends LlmEntity {
+export class Character extends Entity {
     private perception: Perception;
+    private readonly ai = new Ai();
 
     constructor(
         entityRegistry: EntityRegistry,
@@ -66,7 +68,7 @@ export class Character extends LlmEntity {
             emotion: this.emotion,
             time: new Date().toTimeString()
         });
-        const response = await this.callLLm(prompt, responseFormat);
+        const response = await this.ai.call(prompt, responseFormat);
         const enrichedEvents = response.map(event => ({
             ...event,
             sourceId: this.id,

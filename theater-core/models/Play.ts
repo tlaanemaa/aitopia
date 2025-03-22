@@ -12,8 +12,8 @@ export class Play {
   private director: Director;
   private turnOrder: Entity[] = [];
   private currentTurnIndex: number = 0;
-  private readonly inputHandler = new InputHandler();
   private readonly entityRegistry = new EntityRegistry();
+  private readonly inputHandler = new InputHandler(this.entityRegistry);
 
   constructor(seedEvents: EnrichedEvent[]) {
     this.director = new Director(this.entityRegistry);
@@ -68,7 +68,7 @@ export class Play {
     return events;
   }
 
-  public async handleInput(input: string): Promise<EnrichedEvent[]> {
+  public async handleInput(input: string[]): Promise<EnrichedEvent[]> {
     // Turn input into events
     const events = await this.inputHandler.handleInput(input);
 

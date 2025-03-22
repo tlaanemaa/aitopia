@@ -1,7 +1,8 @@
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { EnrichedEvent, buildDirectorEventSchemas } from '../types/events';
-import { LlmEntity } from './LlmEntity';
+import { Entity } from './Entity';
 import { z } from 'zod';
+import { Ai } from './Ai';
 
 const SYSTEM_PROMPT = `
 You are the director of a play.
@@ -25,9 +26,10 @@ const promptTemplate = ChatPromptTemplate.fromMessages([
 /**
  * Director class - Can produce both character and world events
  */
-export class Director extends LlmEntity {
+export class Director extends Entity {
   public readonly name = 'Director';
   protected memorySize = 100;
+  private readonly ai = new Ai();
 
   /**
    * Builds the response format for the director
@@ -47,7 +49,7 @@ export class Director extends LlmEntity {
     const prompt = await promptTemplate.invoke({
       state: this.getMemories(),
     });
-    const response = await this.callLLm(prompt, this.buildResponseFormat());
+    const response = await this.ai.call(prompt, this.buildResponseFormat());
     // Map over the response and replace the names with ids and positions
     const enrichedEvents = response.map(event => {
       if ("subjectCharacterName" in event) {
