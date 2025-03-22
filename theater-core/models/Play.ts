@@ -12,7 +12,7 @@ export class Play {
   private director: Director;
   private turnOrder: Entity[] = [];
   private currentTurnIndex: number = 0;
-  private readonly entityRegistry = new EntityRegistry();
+  public readonly entityRegistry = new EntityRegistry();
   private readonly inputHandler = new InputHandler(this.entityRegistry);
 
   constructor(seedEvents: EnrichedEvent[]) {

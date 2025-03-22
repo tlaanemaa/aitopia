@@ -2,26 +2,26 @@ import { Entity } from "../models/Entity";
 import { Character } from "../models/Character";
 
 export class EntityRegistry {
-    private entities: Map<string, Entity> = new Map();
+    private entities: Record<string, Entity> = {};
 
     register(entity: Entity): void {
-        this.entities.set(entity.id, entity);
+        this.entities[entity.id] = entity;
     }
 
     deregister(entityId: string): void {
-        this.entities.delete(entityId);
+        delete this.entities[entityId];
     }
 
     getEntity(entityId: string): Entity | undefined {
-        return this.entities.get(entityId);
+        return this.entities[entityId];
     }
 
     getEntities(): Entity[] {
-        return Array.from(this.entities.values());
+        return Object.values(this.entities);
     }
 
     getCharacters(): Character[] {
-        return Array.from(this.entities.values()).filter(entity => entity instanceof Character);
+        return Object.values(this.entities).filter(entity => entity instanceof Character);
     }
 
     getCharacterNames(): string[] {
