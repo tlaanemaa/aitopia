@@ -114,7 +114,20 @@ export const CharacterEventSchema = z.union([
   EmotionEventSchema,
   MovementEventSchema,
   ThoughtEventSchema
-]).describe('Union of all possible character event types');
+]).describe('All possible character event types');
+
+/**
+ * Builds a union of all possible targeted character event types with the given character names
+ */
+function buildTargetedCharacterEventSchemas(characterNames: [string, ...string[]]) {
+  return z.union([
+    ActionEventSchema.extend({ subjectCharacterName: z.enum(characterNames).describe('Name of the character performing the action') }),
+    SpeechEventSchema.extend({ subjectCharacterName: z.enum(characterNames).describe('Name of the character speaking') }),
+    EmotionEventSchema.extend({ subjectCharacterName: z.enum(characterNames).describe('Name of the character feeling the emotion') }),
+    MovementEventSchema.extend({ subjectCharacterName: z.enum(characterNames).describe('Name of the character moving') }),
+    ThoughtEventSchema.extend({ subjectCharacterName: z.enum(characterNames).describe('Name of the character thinking') })
+  ]).describe('All possible targeted character event types');
+}
 
 // ================ World Events ================
 /**
@@ -164,6 +177,15 @@ export const WorldEventSchema = z.union([
   CharacterExitEventSchema,
   GenericWorldEventSchema
 ]).describe('Union of all possible world event types');
+
+/**
+ * Builds a union of all possible director event types with the given character names
+ */
+export function buildDirectorEventSchemas(characterNames: string[]) {
+  if (characterNames.length === 0) return WorldEventSchema;
+  const namedCharacterEvents = buildTargetedCharacterEventSchemas(characterNames as [string, ...string[]]);
+  return z.union([namedCharacterEvents, WorldEventSchema])
+}
 
 // ================ Type Exports ================
 export type Position = z.infer<typeof PositionSchema>;

@@ -1,4 +1,5 @@
 import { Entity } from "../models/Entity";
+import { Character } from "../models/Character";
 
 export class EntityRegistry {
     private entities: Map<string, Entity> = new Map();
@@ -17,5 +18,17 @@ export class EntityRegistry {
 
     getEntities(): Entity[] {
         return Array.from(this.entities.values());
+    }
+
+    getCharacters(): Character[] {
+        return Array.from(this.entities.values()).filter(entity => entity instanceof Character);
+    }
+
+    getCharacterNames(): string[] {
+        return this.getCharacters().map(character => character.name);
+    }
+
+    getCharactersByName(name: string): Character[] {
+        return this.getCharacters().filter(character => character.name === name);
     }
 }

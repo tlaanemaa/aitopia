@@ -10,7 +10,6 @@ import { InputHandler } from '../service/InputHandler';
  */
 export class Play {
   private director: Director;
-  private characters: Character[] = [];
   private turnOrder: Entity[] = [];
   private currentTurnIndex: number = 0;
   private readonly inputHandler = new InputHandler();
@@ -18,6 +17,7 @@ export class Play {
 
   constructor(seedEvents: EnrichedEvent[]) {
     this.director = new Director(this.entityRegistry);
+    this.entityRegistry.register(this.director);
     this.turnOrder = [this.director];
     this.handleEvents(seedEvents);
   }
@@ -32,13 +32,11 @@ export class Play {
       charConfig.description
     );
     this.entityRegistry.register(character);
-    this.characters.push(character);
     this.turnOrder.push(character);
   }
 
   private removeCharacter(characterId: string): void {
     this.entityRegistry.deregister(characterId);
-    this.characters = this.characters.filter(c => c.id !== characterId);
     this.turnOrder = this.turnOrder.filter(e => e.id !== characterId);
   }
 
@@ -50,7 +48,7 @@ export class Play {
 
     // Propagate events to all characters
     events.forEach(event => {
-      this.characters.forEach(character => character.handleEvent(event));
+      this.entityRegistry.getEntities().forEach(e => e.handleEvent(event));
     });
 
     // Handle character removals. This is done last to ensure that characters are available during propagation.

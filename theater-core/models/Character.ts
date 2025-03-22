@@ -7,20 +7,40 @@ import {
 } from '../types/events';
 import { isInRange } from '../utils/util';
 import { EntityRegistry } from '../service/EntityRegistry';
-import { Entity } from './Entity';
 import { Perception } from './Perception';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { LlmEntity } from './LlmEntity';
+import { z } from 'zod';
+import { CharacterEventSchema } from '../types/events';
 
-interface MemoryItem {
-    timestamp: Date;
-    content: string;
-}
+const SYSTEM_PROMPT = `
+You are a character named {name}.
+Always respond as {name} and describe your actions in the first person.
+Your backstory is:
+{backstory}
+`;
+
+const TASK_PROMPT = `
+This is what you know about the world:
+{memories}
+
+Your are currently at {position}, feeling {emotion}.
+The current time is {time}.
+What do you want to do next?
+`;
+
+const promptTemplate = ChatPromptTemplate.fromMessages([
+    ["system", SYSTEM_PROMPT.trim()],
+    ["user", TASK_PROMPT.trim()],
+]);
+
+const responseFormat = z.array(CharacterEventSchema).describe('Array of events describing what you want to do next');
 
 /**
  * Character class - Can only produce character events
  */
-export class Character extends Entity {
+export class Character extends LlmEntity {
     private perception: Perception;
-    private memory: MemoryItem[] = [];
 
     constructor(
         entityRegistry: EntityRegistry,
@@ -38,12 +58,21 @@ export class Character extends Entity {
      * Take a turn
      */
     public async takeTurn(): Promise<EnrichedCharacterEvent[]> {
-        return [];
-    }
-
-    private addMemory(content: string): void {
-        this.memory.push({ timestamp: new Date(), content });
-        this.memory = this.memory.slice(-20); // Keep last 20 memories
+        const prompt = await promptTemplate.invoke({
+            name: this.name,
+            backstory: this.backstory,
+            memories: this.getMemories(),
+            position: this.position,
+            emotion: this.emotion,
+            time: new Date().toTimeString()
+        });
+        const response = await this.callLLm(prompt, responseFormat);
+        const enrichedEvents = response.map(event => ({
+            ...event,
+            sourceId: this.id,
+            position: this.position
+        }));
+        return enrichedEvents;
     }
 
     /**
