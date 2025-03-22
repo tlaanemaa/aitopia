@@ -13,9 +13,10 @@ export class Play {
   private director: Director;
   private turnOrder: Entity[] = [];
   private currentTurnIndex: number = 0;
-  public readonly entityRegistry = new EntityRegistry();
+  private readonly entityRegistry = new EntityRegistry();
   private readonly assetRegistry = new AssetRegistry();
   private readonly inputHandler = new InputHandler(this.entityRegistry, this.assetRegistry);
+  private currentEvents: EnrichedEvent[] = [];
 
   /**
    * Constructor for the Play class
@@ -28,7 +29,8 @@ export class Play {
     this.director = new Director(this.entityRegistry, this.assetRegistry);
     this.entityRegistry.register(this.director);
     this.turnOrder = [this.director];
-    this.handleEvents(seedEvents);
+    this.currentEvents = seedEvents;
+    this.handleEvents();
   }
 
   private addCharacter(charConfig: CharacterEnterEvent): void {
@@ -51,40 +53,67 @@ export class Play {
     this.turnOrder = this.turnOrder.filter(e => e.id !== characterId);
   }
 
-  private handleEvents(events: EnrichedEvent[]): void {
+  private handleEvents(): void {
     // Handle character additions. This is done first to ensure that characters are available during propagation.
-    events
+    this.currentEvents
       .filter(event => event.type === 'character_enter')
       .forEach(event => this.addCharacter(event));
 
     // Propagate events to all characters
-    events.forEach(event => {
+    this.currentEvents.forEach(event => {
       this.entityRegistry.getEntities().forEach(e => e.handleEvent(event));
     });
 
     // Handle character removals. This is done last to ensure that characters are available during propagation.
-    events
+    this.currentEvents
       .filter(event => event.type === 'character_exit')
       .forEach(event => this.removeCharacter(event.characterId));
   }
 
+  /**
+   * Play the next turn automatically
+   */
   public async nextTurn(): Promise<EnrichedEvent[]> {
     // Get current entity and their events
+    this.currentEvents = [];
     this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.length;
     const currentEntity = this.turnOrder[this.currentTurnIndex];
-    const events = await currentEntity.takeTurn();
+    this.currentEvents = await currentEntity.takeTurn();
 
     // Handle internally and return events
-    this.handleEvents(events);
-    return events;
+    this.handleEvents();
+    return this.currentEvents;
   }
 
+  /**
+   * Process user input into the play.
+   * This does not trigger a turn, but is processed in a similar way.
+   */
   public async handleInput(input: string[]): Promise<EnrichedEvent[]> {
     // Turn input into events
-    const events = await this.inputHandler.handleInput(input);
+    this.currentEvents = [];
+    this.currentEvents = await this.inputHandler.handleInput(input);
 
     // Handle internally and return events
-    this.handleEvents(events);
-    return events;
+    this.handleEvents();
+    return this.currentEvents;
   }
-} 
+
+  /**
+   * Get the current state of the play, for the UI
+   */
+  public getState() {
+    const speechEvents = this.currentEvents.filter(e => e.type === 'speech');
+    const thoughtEvents = this.currentEvents.filter(e => e.type === 'thought');
+    const characters = this.entityRegistry.getCharacters().map(c => ({
+      id: c.id,
+      name: c.name,
+      avatar: c.avatar,
+      position: c.position,
+      emotion: c.emotion,
+      speech: speechEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
+      thought: thoughtEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
+    }));
+    return characters;
+  }
+}
