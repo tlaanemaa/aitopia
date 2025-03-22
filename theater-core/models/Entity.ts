@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { EnrichedEvent } from '../types/events';
 import { EntityRegistry } from '../service/EntityRegistry';
+import { AssetRegistry } from '../service/AssetRegistry';
 
 interface MemoryItem {
   timestamp: Date;
@@ -17,7 +18,8 @@ export abstract class Entity {
   protected memory: MemoryItem[] = [];
 
   constructor(
-    public readonly entityRegistry: EntityRegistry
+    public readonly entityRegistry: EntityRegistry,
+    public readonly assetRegistry: AssetRegistry
   ) { }
 
   /**

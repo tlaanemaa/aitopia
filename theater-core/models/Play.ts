@@ -4,6 +4,7 @@ import { EnrichedEvent, CharacterEnterEvent } from '../types/events';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { Entity } from './Entity';
 import { InputHandler } from '../service/InputHandler';
+import { AssetRegistry } from '../service/AssetRegistry';
 
 /**
  * Main class representing a theatrical play
@@ -13,10 +14,18 @@ export class Play {
   private turnOrder: Entity[] = [];
   private currentTurnIndex: number = 0;
   public readonly entityRegistry = new EntityRegistry();
-  private readonly inputHandler = new InputHandler(this.entityRegistry);
+  private readonly assetRegistry = new AssetRegistry();
+  private readonly inputHandler = new InputHandler(this.entityRegistry, this.assetRegistry);
 
-  constructor(seedEvents: EnrichedEvent[]) {
-    this.director = new Director(this.entityRegistry);
+  /**
+   * Constructor for the Play class
+   * 
+   * @param avatars - List of avatars to be used in the play
+   * @param seedEvents - List of seed events to be used in the play
+   */
+  constructor(avatars: string[], seedEvents: EnrichedEvent[]) {
+    this.assetRegistry.setAvatars(avatars);
+    this.director = new Director(this.entityRegistry, this.assetRegistry);
     this.entityRegistry.register(this.director);
     this.turnOrder = [this.director];
     this.handleEvents(seedEvents);
@@ -25,11 +34,13 @@ export class Play {
   private addCharacter(charConfig: CharacterEnterEvent): void {
     const character = new Character(
       this.entityRegistry,
+      this.assetRegistry,
       charConfig.name,
+      charConfig.avatar,
       charConfig.position,
       charConfig.traits,
+      charConfig.emotion,
       charConfig.backstory,
-      charConfig.description
     );
     this.entityRegistry.register(character);
     this.turnOrder.push(character);

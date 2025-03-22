@@ -38,7 +38,7 @@ export class Director extends Entity {
    */
   private buildResponseFormat() {
     const currentCharacters = this.entityRegistry.getCharacterNames();
-    const directorEventSchemas = buildDirectorEventSchemas(currentCharacters);
+    const directorEventSchemas = buildDirectorEventSchemas(currentCharacters, this.assetRegistry.getAvatars());
     return z.array(directorEventSchemas).describe('Array of events describing what you want to do next to influence the story.');
   }
 

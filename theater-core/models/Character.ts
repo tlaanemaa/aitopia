@@ -13,6 +13,7 @@ import { Entity } from './Entity';
 import { z } from 'zod';
 import { CharacterEventSchema } from '../types/events';
 import { Ai } from './Ai';
+import { AssetRegistry } from '../service/AssetRegistry';
 
 const SYSTEM_PROMPT = `
 You are a character named {name}.
@@ -46,13 +47,15 @@ export class Character extends Entity {
 
     constructor(
         entityRegistry: EntityRegistry,
+        assetRegistry: AssetRegistry,
         public readonly name: string,
+        public avatar: string,
         public position: Position = { x: 50, y: 50 },
         public traits: Trait[] = [],
         public emotion: string = 'neutral',
-        public backstory?: string
+        public backstory?: string,
     ) {
-        super(entityRegistry);
+        super(entityRegistry, assetRegistry);
         this.perception = new Perception(traits);
     }
 

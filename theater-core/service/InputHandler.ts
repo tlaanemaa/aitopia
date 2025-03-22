@@ -3,6 +3,7 @@ import { buildDirectorEventSchemas, EnrichedEvent } from "../types/events";
 import { Ai } from "../models/Ai";
 import { EntityRegistry } from "./EntityRegistry";
 import { z } from "zod";
+import { AssetRegistry } from "./AssetRegistry";
 
 const SYSTEM_PROMPT = `
 Your task is to take the user's input and convert it into a list of events that will change the story.
@@ -23,7 +24,10 @@ const promptTemplate = ChatPromptTemplate.fromMessages([
 export class InputHandler {
     private readonly ai = new Ai();
 
-    constructor(private readonly entityRegistry: EntityRegistry) { }
+    constructor(
+        private readonly entityRegistry: EntityRegistry,
+        private readonly assetRegistry: AssetRegistry
+    ) { }
 
     /**
    * Builds the response format for the director
@@ -32,7 +36,7 @@ export class InputHandler {
    */
     private buildResponseFormat() {
         const currentCharacters = this.entityRegistry.getCharacterNames();
-        const directorEventSchemas = buildDirectorEventSchemas(currentCharacters);
+        const directorEventSchemas = buildDirectorEventSchemas(currentCharacters, this.assetRegistry.getAvatars());
         return z.array(directorEventSchemas).describe('Array of events describing changes to the story.');
     }
 

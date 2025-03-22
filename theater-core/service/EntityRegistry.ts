@@ -3,7 +3,8 @@ import { Character } from "../models/Character";
 
 export class EntityRegistry {
     private entities: Record<string, Entity> = {};
-
+    private avatars: Record<string, string> = {};
+    
     register(entity: Entity): void {
         this.entities[entity.id] = entity;
     }
