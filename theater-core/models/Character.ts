@@ -47,9 +47,9 @@ const responseFormat = z.array(CharacterEventSchema).describe('Array of events d
  */
 export class Character extends Entity {
     private perception: Perception;
-    private readonly ai = new Ai();
 
     constructor(
+        ai: Ai,
         entityRegistry: EntityRegistry,
         assetRegistry: AssetRegistry,
         public readonly name: string,
@@ -59,7 +59,7 @@ export class Character extends Entity {
         public emotion: string = 'neutral',
         public backstory?: string,
     ) {
-        super(entityRegistry, assetRegistry);
+        super(ai, entityRegistry, assetRegistry);
         this.perception = new Perception(traits);
     }
 

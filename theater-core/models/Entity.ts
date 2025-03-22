@@ -3,6 +3,7 @@ import { EnrichedEvent } from '../types/events';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { AssetRegistry } from '../service/AssetRegistry';
 import { Memory } from './Memory';
+import { Ai } from './Ai';
 
 /**
  * Base class for all entities in the theater (Director and Characters)
@@ -13,8 +14,9 @@ export abstract class Entity {
   protected memory = new Memory(20);
 
   constructor(
-    public readonly entityRegistry: EntityRegistry,
-    public readonly assetRegistry: AssetRegistry
+    protected readonly ai: Ai,
+    protected readonly entityRegistry: EntityRegistry,
+    protected readonly assetRegistry: AssetRegistry
   ) { }
 
   /**

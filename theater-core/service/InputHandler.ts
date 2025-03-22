@@ -22,9 +22,8 @@ const promptTemplate = ChatPromptTemplate.fromMessages([
 ]);
 
 export class InputHandler {
-    private readonly ai = new Ai();
-
     constructor(
+        private readonly ai: Ai,
         private readonly entityRegistry: EntityRegistry,
         private readonly assetRegistry: AssetRegistry
     ) { }

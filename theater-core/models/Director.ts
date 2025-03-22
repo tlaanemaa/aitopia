@@ -2,7 +2,6 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { EnrichedEvent, buildDirectorEventSchemas } from '../types/events';
 import { Entity } from './Entity';
 import { z } from 'zod';
-import { Ai } from './Ai';
 
 const SYSTEM_PROMPT = `
 You are the director of a play.
@@ -32,7 +31,6 @@ const promptTemplate = ChatPromptTemplate.fromMessages([
 export class Director extends Entity {
   public readonly name = 'Director';
   protected memorySize = 100;
-  private readonly ai = new Ai();
 
   /**
    * Builds the response format for the director

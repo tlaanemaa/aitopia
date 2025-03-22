@@ -10,3 +10,4 @@
 export { Play } from './models/Play';
 export type { EnrichedEvent, CharacterEnterEvent } from './types/events';
 export type { Position } from './types/events';
+export type { AiConfig } from './types/common';

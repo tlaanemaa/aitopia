@@ -1,12 +1,17 @@
 import { z } from "zod";
 import { ChatOllama } from "@langchain/ollama";
 import { ChatPromptValueInterface } from "@langchain/core/prompt_values";
+import { AiConfig } from "../types/common";
 
 export class Ai {
-    private llm = new ChatOllama({
-        baseUrl: 'http://localhost:11434',
-        model: 'gemma3:4b',
-    });
+    private llm: ChatOllama;
+
+    constructor(aiConfig: AiConfig) {
+        this.llm = new ChatOllama({
+            baseUrl: aiConfig.baseUrl,
+            model: aiConfig.model,
+        });
+    }
 
     public async call<T extends z.Schema>(prompt: ChatPromptValueInterface, responseFormat: T): Promise<z.infer<T>> {
         console.log("Prompting LLM with:", prompt.toString());

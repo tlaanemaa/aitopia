@@ -5,6 +5,8 @@ import { EntityRegistry } from '../service/EntityRegistry';
 import { Entity } from './Entity';
 import { InputHandler } from '../service/InputHandler';
 import { AssetRegistry } from '../service/AssetRegistry';
+import { AiConfig } from '../types/common';
+import { Ai } from './Ai';
 
 /**
  * Main class representing a theatrical play
@@ -15,19 +17,23 @@ export class Play {
   private currentTurnIndex: number = 0;
   private readonly entityRegistry = new EntityRegistry();
   private readonly assetRegistry = new AssetRegistry();
-  private readonly inputHandler = new InputHandler(this.entityRegistry, this.assetRegistry);
+  private readonly ai: Ai;
+  private readonly inputHandler: InputHandler;
   private currentEvents: EnrichedEvent[] = [];
   private currentScene: string = '';
 
   /**
    * Constructor for the Play class
    * 
+   * @param aiConfig - Configuration for the AI
    * @param avatars - List of avatars to be used in the play
    * @param seedEvents - List of seed events to be used in the play
    */
-  constructor(avatars: string[], seedEvents: EnrichedEvent[]) {
+  constructor(aiConfig: AiConfig, avatars: string[], seedEvents: EnrichedEvent[]) {
+    this.ai = new Ai(aiConfig);
+    this.inputHandler = new InputHandler(this.ai, this.entityRegistry, this.assetRegistry);
     this.assetRegistry.setAvatars(avatars);
-    this.director = new Director(this.entityRegistry, this.assetRegistry);
+    this.director = new Director(this.ai, this.entityRegistry, this.assetRegistry);
     this.entityRegistry.register(this.director);
     this.turnOrder = [this.director];
     this.currentEvents = seedEvents;
@@ -36,6 +42,7 @@ export class Play {
 
   private addCharacter(charConfig: CharacterEnterEvent): void {
     const character = new Character(
+      this.ai,
       this.entityRegistry,
       this.assetRegistry,
       charConfig.name,
