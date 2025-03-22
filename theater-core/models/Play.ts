@@ -28,7 +28,7 @@ export class Play {
    * @param avatars - List of avatars to be used in the play
    * @param seedEvents - List of seed events to be used in the play
    */
-  constructor(aiConfig: AiConfig, avatars: string[], seedEvents: EnrichedEvent[]) {
+  constructor(aiConfig: AiConfig, avatars: string[], seedEvents: EnrichedEvent[] = []) {
     this.ai = new Ai(aiConfig);
     this.inputHandler = new InputHandler(this.ai, this.entityRegistry, this.assetRegistry);
     this.assetRegistry.setAvatars(avatars);
