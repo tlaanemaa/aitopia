@@ -70,11 +70,11 @@ export class Character extends Entity {
     public async takeTurn(): Promise<EnrichedCharacterEvent[]> {
         const prompt = await promptTemplate.invoke({
             name: this.name,
-            backstory: this.backstory,
-            scene: this.memory.scene,
-            memories: this.memory.getMemories(),
+            backstory: this.backstory || 'N/A',
+            scene: this.memory.scene || 'N/A',
+            memories: this.memory.getMemories() || 'N/A',
             position: this.position,
-            emotion: this.emotion,
+            emotion: this.emotion || 'N/A',
             time: new Date().toTimeString()
         });
         const response = await this.ai.call(prompt, responseFormat);

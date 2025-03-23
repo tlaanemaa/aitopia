@@ -94,8 +94,8 @@ export class Director extends Entity {
  */
   public async takeTurn(): Promise<EnrichedEvent[]> {
     const prompt = await directorPromptTemplate.invoke({
-      state: this.memory.getMemories(),
-      scene: this.memory.scene,
+      state: this.memory.getMemories() || 'N/A',
+      scene: this.memory.scene || 'N/A',
     });
     return this.getEvents(prompt);
   }
@@ -105,9 +105,9 @@ export class Director extends Entity {
  */
   public async handleUserInput(input: string[]): Promise<EnrichedEvent[]> {
     const prompt = await userInputPromptTemplate.invoke({
-      state: this.memory.getMemories(),
-      scene: this.memory.scene,
-      input: input.join('\n'),
+      state: this.memory.getMemories() || 'N/A',
+      scene: this.memory.scene || 'N/A',
+      input: input.join('\n') || 'N/A',
     });
     return this.getEvents(prompt);
   }
