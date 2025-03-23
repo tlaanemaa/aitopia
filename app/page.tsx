@@ -1,22 +1,24 @@
 "use client";
 
-import { useGameStore } from "./store/gameStore";
+import { AnimatePresence } from "framer-motion";
+import { useTheaterStore } from "./store/theaterStore";
 import ActionLog from "./components/ActionLog";
-import GameField from "./components/GameField";
+import Stage from "./components/Stage";
 import TurnCounter from "./components/TurnCounter";
 import UserInput from "./components/UserInput";
 import Banner from "./components/Banner";
 import Settings from "./components/Settings";
 import SettingsButton from "./components/SettingsButton";
-import { AnimatePresence } from "framer-motion";
+import PlayRunner from "./components/PlayRunner";
 
 export default function Home() {
-  const isStarted = useGameStore().turn > 0;
+  const isStarted = useTheaterStore().turnCount > 0;
 
   return (
     <div className="relative min-h-screen">
+      <PlayRunner />
       <ActionLog />
-      <GameField />
+      <Stage />
       <TurnCounter />
       <AnimatePresence>{!isStarted && <Banner />}</AnimatePresence>
       <UserInput />

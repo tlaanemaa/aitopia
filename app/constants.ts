@@ -1,5 +1,5 @@
 // Add available character images
-export const CHARACTER_IMAGES = [
+export const AVATAR_URLS = [
     "/among_us.webp",
     "/green.png",
     "/yellow.png",
@@ -26,4 +26,4 @@ export const CHARACTER_IMAGES = [
     "/misiek.gif",
     "/quby-cute.gif",
     "/yippee-cheer.gif",
-] as const;
+];

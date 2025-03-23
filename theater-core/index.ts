@@ -17,3 +17,4 @@ export type { Position } from './types/events';
 export type { AiConfig } from './models/Ai';
 export type PlayState = ReturnType<typeof Play.prototype.getState>;
 export type CharacterState = PlayState['characters'][number];
+export type { MemoryItem } from './models/Memory';

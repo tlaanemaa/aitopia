@@ -1,22 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useGameStore } from "../store/gameStore";
-import { initializeVoices } from "../store/voice";
-import { nextTurn } from "../actions/nextTurn";
+import { useTheaterStore } from "../store/theaterStore";
 
 export default function UserInput() {
-  const { loading, turn } = useGameStore();
+  const { turnCount, setAutoRun, queueInput } = useTheaterStore();
   const [input, setInput] = useState("");
 
   const sendInput = async () => {
+    queueInput(input);
+    setAutoRun(true);
     setInput("");
-    initializeVoices();
-    await nextTurn(input);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !loading) {
+    if (e.key === "Enter" && input.trim()) {
       sendInput();
     }
   };
@@ -28,17 +26,15 @@ export default function UserInput() {
           type="text"
           placeholder="Type your instructions..."
           value={input}
-          disabled={loading}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           className="flex-grow py-2 px-4 rounded-full focus:outline-none disabled:bg-gray-200 bg-white text-gray-900 min-w-1"
         />
         <button
-          disabled={loading}
           onClick={sendInput}
           className="px-4 py-2 bg-gray-800 text-white rounded-full hover:bg-gray-900 disabled:bg-gray-500 whitespace-nowrap"
         >
-          {loading ? "Thinking..." : turn > 0 ? "Next Turn" : "Start game"}
+          {turnCount > 0 ? "Next Turn" : "Start game"}
         </button>
       </div>
     </div>

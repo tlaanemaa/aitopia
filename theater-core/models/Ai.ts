@@ -25,10 +25,14 @@ export class Ai {
             model: this.model,
         })
 
+        const wrappedSchema = z.object({
+            result: responseFormat.describe("Your response"),
+        });
+
         console.log("Prompting LLM with:", prompt.toString());
-        const structuredLlm = llm.withStructuredOutput(responseFormat);
+        const structuredLlm = llm.withStructuredOutput(wrappedSchema);
         const response = await structuredLlm.invoke(prompt);
         console.log("LLM responded with:", response);
-        return response;
+        return response.result;
     }
 }

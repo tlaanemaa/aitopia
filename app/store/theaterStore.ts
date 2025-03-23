@@ -1,10 +1,19 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { CharacterState, Play } from "@/theater-core";
+import { Play } from "@/theater-core";
+import type { CharacterState, MemoryItem } from "@/theater-core";
+import { getSettings } from "./settingsStore";
+import { AVATAR_URLS } from '../constants'
+
+interface ErrorRecord {
+    timestamp: Date;
+    message: string;
+}
 
 interface TheaterStore {
     // State
-    play: Play | null;
+    play: Play;
+    autoRun: boolean;
     scene: string;
     characters: CharacterState[];
     activeCharacterId: string | null;     // Who is visually active (speaking)
@@ -13,9 +22,11 @@ interface TheaterStore {
     isProcessing: boolean;
     isProcessingUserInput: boolean;
     turnCount: number;
+    directorLog: MemoryItem[];
+    errors: ErrorRecord[];
 
     // Simple actions for state updates
-    setPlay: (play: Play | null) => void;
+    setAutoRun: (autoRun: boolean) => void;
     setScene: (scene: string) => void;
     setCharacters: (characters: CharacterState[]) => void;
     setActiveCharacter: (id: string | null) => void;
@@ -25,12 +36,22 @@ interface TheaterStore {
     setProcessing: (isProcessing: boolean) => void;
     setProcessingUserInput: (isProcessing: boolean) => void;
     incrementTurn: () => void;
+    setDirectorLog: (log: MemoryItem[]) => void;
+    addError: (error: Error) => void;
 }
 
 export const useTheaterStore = create<TheaterStore>()(
     immer((set) => ({
         // Initial state
-        play: null,
+        play: new Play(
+            {
+                model: getSettings().modelName,
+                baseUrl: getSettings().endpoint,
+            },
+            AVATAR_URLS,
+            []
+        ),
+        autoRun: false,
         scene: "",
         characters: [],
         activeCharacterId: null,
@@ -39,9 +60,11 @@ export const useTheaterStore = create<TheaterStore>()(
         isProcessing: false,
         isProcessingUserInput: false,
         turnCount: 0,
+        directorLog: [],
+        errors: [],
 
         // Actions
-        setPlay: (play) => set({ play }),
+        setAutoRun: (autoRun) => set({ autoRun }),
 
         setScene: (scene) => set({ scene }),
 
@@ -49,7 +72,10 @@ export const useTheaterStore = create<TheaterStore>()(
 
         setActiveCharacter: (id) => set({ activeCharacterId: id }),
 
-        setProcessingCharacter: (id) => set({ processingCharacterId: id }),
+        setProcessingCharacter: (id) => set((state) => ({
+            processingCharacterId: id,
+            ...(!state.activeCharacterId ? { activeCharacterId: id } : {})
+        })),
 
         queueInput: (input) => set((state) => ({
             inputQueue: [...state.inputQueue, input]
@@ -63,6 +89,17 @@ export const useTheaterStore = create<TheaterStore>()(
 
         incrementTurn: () => set((state) => ({
             turnCount: state.turnCount + 1
+        })),
+
+        setDirectorLog: (log) => set({ directorLog: log }),
+
+        addError: (error: Error) => set((state) => ({
+            errors: [...state.errors, { timestamp: new Date(), message: error.message }]
         }))
     }))
 );
+
+/**
+ * Get a snapshot of the current theater state
+ */
+export const getTheaterState = () => useTheaterStore.getState();

@@ -1,4 +1,4 @@
-interface MemoryItem {
+export interface MemoryItem {
     timestamp: Date;
     content: string;
 }
@@ -29,5 +29,12 @@ export class Memory {
      */
     public getMemories(): string {
         return this.items.map(m => `${m.timestamp.toTimeString()} - ${m.content}`).join('\n');
+    }
+
+    /**
+     * Ger memories as an array
+     */
+    public getMemoriesArray(): MemoryItem[] {
+        return [...this.items];
     }
 }
