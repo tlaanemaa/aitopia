@@ -5,7 +5,7 @@ import { CHARACTER_IMAGES } from "../constants";
 import { getSettings } from "./settingsStore";
 
 
-interface PlayStore {
+interface TheaterStore {
     // State
     play: Play | null;
     scene: string;
@@ -27,7 +27,7 @@ interface PlayStore {
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const usePlayStore = create<PlayStore>()(
+export const useTheaterStore = create<TheaterStore>()(
     immer((set, get) => ({
         // Initial state
         play: null,
