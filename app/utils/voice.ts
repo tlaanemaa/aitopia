@@ -1,5 +1,5 @@
 const window = globalThis.window as Window;
-import { hashString } from "@/app/utils/hash";
+import { hashString } from "./hash";
 
 const SUPPORTED_LANGUAGES = [
   "en", // English

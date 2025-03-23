@@ -1,110 +1,68 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { CharacterState, Play } from "../../theater-core";
-import { CHARACTER_IMAGES } from "../constants";
-import { getSettings } from "./settingsStore";
-
+import { CharacterState, Play } from "@/theater-core";
 
 interface TheaterStore {
     // State
     play: Play | null;
     scene: string;
     characters: CharacterState[];
-    activeCharacterId: string | null;
+    activeCharacterId: string | null;     // Who is visually active (speaking)
+    processingCharacterId: string | null; // Who is being processed
     inputQueue: string[];
-    processingUserInput: boolean;
-    turnCount: number;
     isProcessing: boolean;
-    flagToStop: boolean;
+    isProcessingUserInput: boolean;
+    turnCount: number;
 
-    // Actions
-    isStarted: () => boolean;
-    initialize: () => void;
+    // Simple actions for state updates
+    setPlay: (play: Play | null) => void;
+    setScene: (scene: string) => void;
+    setCharacters: (characters: CharacterState[]) => void;
+    setActiveCharacter: (id: string | null) => void;
+    setProcessingCharacter: (id: string | null) => void;
     queueInput: (input: string) => void;
-    startLoop: () => Promise<void>;
-    stopLoop: () => void;
+    clearInputQueue: () => void;
+    setProcessing: (isProcessing: boolean) => void;
+    setProcessingUserInput: (isProcessing: boolean) => void;
+    incrementTurn: () => void;
 }
 
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const useTheaterStore = create<TheaterStore>()(
-    immer((set, get) => ({
+    immer((set) => ({
         // Initial state
         play: null,
         scene: "",
         characters: [],
         activeCharacterId: null,
+        processingCharacterId: null,
         inputQueue: [],
-        processingUserInput: false,
-        turnCount: 0,
         isProcessing: false,
-        flagToStop: false,
+        isProcessingUserInput: false,
+        turnCount: 0,
 
-        isStarted: () => {
-            const { play, turnCount } = get();
-            return play !== null && turnCount > 0;
-        },
+        // Actions
+        setPlay: (play) => set({ play }),
 
-        initialize() {
-            const settings = getSettings();
-            const aiConfig = {
-                model: settings.modelName,
-                baseUrl: settings.endpoint
-            };
+        setScene: (scene) => set({ scene }),
 
-            set((state) => {
-                // Create a new Play and sync our state with it
-                state.play = new Play(aiConfig, [...CHARACTER_IMAGES]);
-                state.turnCount = 0;
-                const playState = state.play.getState();
-                state.characters = playState.characters;
-                state.scene = playState.scene;
-            });
-        },
+        setCharacters: (characters) => set({ characters }),
 
-        // Queue user input (to be processed on next turn)
-        queueInput(input: string) {
-            set((state) => {
-                state.inputQueue.push(input);
-            });
-        },
+        setActiveCharacter: (id) => set({ activeCharacterId: id }),
 
-        // Process the next turn (and handle any queued input)
-        async startLoop() {
-            try {
-                set(() => ({ isProcessing: true }));
-                while (!get().flagToStop) {
-                    const { play, inputQueue, isProcessing, turnCount } = get();
-                    if (!play || isProcessing) return;
+        setProcessingCharacter: (id) => set({ processingCharacterId: id }),
 
-                    // If there is no input, proceed to the next turn
-                    if (inputQueue.length === 0) {
-                        play.nextTurn()
-                        set(() => ({ activeCharacterId: play.currentTurnEntity.id }));
-                    }
+        queueInput: (input) => set((state) => ({
+            inputQueue: [...state.inputQueue, input]
+        })),
 
-                    // Process the turn, with any queued input
-                    set(() => ({ inputQueue: [] }));
-                    await play.processTurn(inputQueue);
+        clearInputQueue: () => set({ inputQueue: [] }),
 
-                    // Update state
-                    const playState = play.getState();
-                    set(() => ({
-                        characters: playState.characters,
-                        scene: playState.scene,
-                        turnCount: turnCount + 1,
-                    }));
+        setProcessing: (isProcessing) => set({ isProcessing }),
 
-                    // Wait a bit
-                    await wait(100);
-                }
-            } finally {
-                set(() => ({ isProcessing: false }));
-            }
-        },
+        setProcessingUserInput: (isProcessing) => set({ isProcessingUserInput: isProcessing }),
 
-        stopLoop() {
-            set(() => ({ flagToStop: true }));
-        }
-    })
-    ));
+        incrementTurn: () => set((state) => ({
+            turnCount: state.turnCount + 1
+        }))
+    }))
+);
