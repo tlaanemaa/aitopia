@@ -134,6 +134,7 @@ export class Play {
       name: c.name,
       avatar: c.avatar,
       position: c.position,
+      active: c.id === this.currentTurnEntity.id,
       emotion: c.emotion,
       speech: speechEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
       thought: thoughtEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
