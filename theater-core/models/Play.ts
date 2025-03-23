@@ -3,7 +3,6 @@ import { Character } from './Character';
 import { EnrichedEvent, CharacterEnterEvent } from '../types/events';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { Entity } from './Entity';
-import { InputHandler } from '../service/InputHandler';
 import { AssetRegistry } from '../service/AssetRegistry';
 import { Ai, AiConfig } from './Ai';
 
@@ -17,7 +16,6 @@ export class Play {
   private currentTurnIndex: number = 0;
   private readonly entityRegistry = new EntityRegistry();
   private readonly assetRegistry = new AssetRegistry();
-  private readonly inputHandler: InputHandler;
   private currentEvents: EnrichedEvent[] = [];
   private currentScene: string = '';
   private isProcessing: boolean = false;
@@ -31,7 +29,6 @@ export class Play {
    */
   constructor(aiConfig: AiConfig, avatars: string[], seedEvents: EnrichedEvent[] = []) {
     this.ai = new Ai(aiConfig);
-    this.inputHandler = new InputHandler(this.ai, this.entityRegistry, this.assetRegistry);
     this.assetRegistry.setAvatars(avatars);
     this.director = new Director(this.ai, this.entityRegistry, this.assetRegistry);
     this.entityRegistry.register(this.director);
@@ -112,7 +109,7 @@ export class Play {
       this.currentEvents = [];
       // Get current entity and their events
       this.currentEvents = input && input.length > 0
-        ? await this.inputHandler.handleInput(input)
+        ? await this.director.handleUserInput(input)
         : await this.currentTurnEntity.takeTurn();
 
       // Handle internally and return events

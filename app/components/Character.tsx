@@ -4,6 +4,7 @@ import CharacterEmotion from "./CharacterEmotion";
 import SpeechBubble from "./SpeechBubble";
 import ThoughtBubble from "./ThoughtBubble";
 import clsx from "clsx";
+import { getAvatarUrl } from "../constants";
 
 // Constants for character display
 const CHARACTER_WIDTH = 100;
@@ -18,7 +19,7 @@ interface CharacterProps {
   emotion: string;
   speech?: string;
   thought?: string;
-  visualState?: 'speaking' | 'thinking' | 'processing' | 'idle';
+  visualState?: "speaking" | "thinking" | "processing" | "idle";
 }
 
 export default function Character({
@@ -47,9 +48,10 @@ export default function Character({
     CHARACTER_HEIGHT / 2;
 
   // If processing, show a thinking message
-  const displayThought = character.visualState === 'processing' 
-    ? "Hmm... what should I do next?" 
-    : character.thought;
+  const displayThought =
+    character.visualState === "processing"
+      ? "Hmm... what should I do next?"
+      : character.thought;
 
   return (
     <div
@@ -58,22 +60,24 @@ export default function Character({
         transform: `translate(${offsetX}px, ${offsetY}px)`,
       }}
     >
-      <div 
+      <div
         className={clsx(
           "relative flex flex-col items-center transition-all duration-300",
-          character.visualState === 'speaking' && "scale-110"
+          character.visualState === "speaking" && "scale-110"
         )}
       >
         <div className="relative">
           <Image
-            src={character.avatar}
+            src={getAvatarUrl(character.avatar)}
             alt={character.name}
             width={CHARACTER_WIDTH}
             height={CHARACTER_HEIGHT}
             className={clsx(
               "rounded-full transition-all duration-300",
-              character.visualState === 'speaking' && "ring-4 ring-yellow-400 ring-opacity-50",
-              character.visualState === 'processing' && "ring-2 ring-blue-400 ring-opacity-30"
+              character.visualState === "speaking" &&
+                "ring-4 ring-yellow-400 ring-opacity-50",
+              character.visualState === "processing" &&
+                "ring-2 ring-blue-400 ring-opacity-30"
             )}
           />
           <CharacterEmotion emotion={character.emotion} />
@@ -83,8 +87,12 @@ export default function Character({
         </div>
         {(displayThought || character.speech) && (
           <div className="absolute bottom-full flex flex-col text-sm p-2 w-[300px] rounded-md items-center space-y-2 bg-black bg-opacity-20 backdrop-blur-sm">
-            {displayThought && <ThoughtBubble text={displayThought} speed={30} />}
-            {character.speech && <SpeechBubble text={character.speech} speed={30} />}
+            {displayThought && (
+              <ThoughtBubble text={displayThought} speed={30} />
+            )}
+            {character.speech && (
+              <SpeechBubble text={character.speech} speed={30} />
+            )}
           </div>
         )}
       </div>

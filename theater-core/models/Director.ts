@@ -2,15 +2,17 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { EnrichedEvent, buildDirectorEventSchemas } from '../types/events';
 import { Entity } from './Entity';
 import { z } from 'zod';
+import { ChatPromptValueInterface } from '@langchain/core/prompt_values';
 
-const SYSTEM_PROMPT = `
+// Director prompts
+const DIRECTOR_SYSTEM_PROMPT = `
 You are the director of a play.
 You are responsible for guiding the story so that it is engaging and interesting.
 You can introduce new characters, change the setting, or even change the rules of the play.
 The characters in the play have a mind of their own, but you can influence them by guiding the story.
 `;
 
-const TASK_PROMPT = `
+const DIRECTOR_TASK_PROMPT = `
 This is the current scene description:
 {scene}
 
@@ -18,11 +20,37 @@ This is the current state of the play:
 {state}
 
 What do you want to do next? Keep it engaging and interesting!
+Return at least one event!
 `;
 
-const promptTemplate = ChatPromptTemplate.fromMessages([
-  ["system", SYSTEM_PROMPT.trim()],
-  ["user", TASK_PROMPT.trim()],
+const directorPromptTemplate = ChatPromptTemplate.fromMessages([
+  ["system", DIRECTOR_SYSTEM_PROMPT.trim()],
+  ["user", DIRECTOR_TASK_PROMPT.trim()],
+]);
+
+// User input prompts
+const USER_INPUT_SYSTEM_PROMPT = `
+Your task is to take the user's input and convert it into a list of events that will change the story.
+`;
+
+const USER_INPUT_TASK_PROMPT = `
+This is the current scene description:
+{scene}
+
+This is the current state of the play:
+{state}
+
+This is the user input:
+{input}
+
+Please convert the user input into a list of events that will change the story.
+If the user mentions characters that are not in the story, create a new character.
+Return at least one event!
+`;
+
+const userInputPromptTemplate = ChatPromptTemplate.fromMessages([
+  ["system", USER_INPUT_SYSTEM_PROMPT.trim()],
+  ["user", USER_INPUT_TASK_PROMPT.trim()],
 ]);
 
 /**
@@ -43,14 +71,7 @@ export class Director extends Entity {
     return z.array(directorEventSchemas).describe('Array of events describing what you want to do next to influence the story.');
   }
 
-  /**
- * Take a turn
- */
-  public async takeTurn(): Promise<EnrichedEvent[]> {
-    const prompt = await promptTemplate.invoke({
-      state: this.memory.getMemories(),
-      scene: this.memory.scene,
-    });
+  private async getEvents(prompt: ChatPromptValueInterface) {
     const response = await this.ai.call(prompt, this.buildResponseFormat());
     // Map over the response and replace the names with ids and positions
     const enrichedEvents = response.map(event => {
@@ -66,6 +87,29 @@ export class Director extends Entity {
       }
     });
     return enrichedEvents;
+  }
+
+  /**
+ * Take a turn
+ */
+  public async takeTurn(): Promise<EnrichedEvent[]> {
+    const prompt = await directorPromptTemplate.invoke({
+      state: this.memory.getMemories(),
+      scene: this.memory.scene,
+    });
+    return this.getEvents(prompt);
+  }
+
+  /**
+ * Handle user input
+ */
+  public async handleUserInput(input: string[]): Promise<EnrichedEvent[]> {
+    const prompt = await userInputPromptTemplate.invoke({
+      state: this.memory.getMemories(),
+      scene: this.memory.scene,
+      input: input.join('\n'),
+    });
+    return this.getEvents(prompt);
   }
 
   /**

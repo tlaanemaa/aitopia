@@ -33,6 +33,7 @@ This is what you know about the world:
 Your are currently at {position}, feeling {emotion}.
 The current time is {time}.
 What do you want to do next?
+Return at least one event!
 `;
 
 const promptTemplate = ChatPromptTemplate.fromMessages([
