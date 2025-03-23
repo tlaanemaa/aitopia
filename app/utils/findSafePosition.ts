@@ -2,7 +2,7 @@ import {
   CHARACTER_WIDTH,
   CHARACTER_HEIGHT,
   SCREEN_MARGIN,
-} from "../store/gameStore";
+} from "../constants";
 
 /**
  * Calculates distance between two points in pixel space

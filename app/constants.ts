@@ -1,3 +1,8 @@
+// Constants for character display
+export const CHARACTER_WIDTH = 100;
+export const CHARACTER_HEIGHT = 100;
+export const SCREEN_MARGIN = 50;
+
 export const getAvatarUrl = (name: string) => `/avatars/${name}`;
 
 // Add available character images

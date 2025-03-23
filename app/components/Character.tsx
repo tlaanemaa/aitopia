@@ -4,12 +4,12 @@ import CharacterEmotion from "./CharacterEmotion";
 import SpeechBubble from "./SpeechBubble";
 import ThoughtBubble from "./ThoughtBubble";
 import clsx from "clsx";
-import { getAvatarUrl } from "../constants";
-
-// Constants for character display
-const CHARACTER_WIDTH = 100;
-const CHARACTER_HEIGHT = 100;
-const SCREEN_MARGIN = 50;
+import {
+  getAvatarUrl,
+  CHARACTER_WIDTH,
+  CHARACTER_HEIGHT,
+  SCREEN_MARGIN,
+} from "../constants";
 
 interface CharacterProps {
   id: string;
