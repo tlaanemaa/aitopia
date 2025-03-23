@@ -143,6 +143,7 @@ export class Play {
     return {
       characters,
       scene: this.currentScene,
+      directorLog: this.director.getLog(),
     };
   }
 }

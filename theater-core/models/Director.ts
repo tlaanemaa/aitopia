@@ -112,4 +112,8 @@ export class Director extends Entity {
       }
     }
   }
+
+  public getLog(): string {
+    return this.memory.getMemories();
+  }
 } 
