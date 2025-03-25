@@ -8,37 +8,36 @@ import { speak, initializeVoices } from "../utils/voice";
 /**
  * Process user input
  */
-const processUserInput = async () => {
+async function processUserInput() {
   console.log("Processing user input");
   const store = getTheaterState();
-  if (!store.play) return;
+  if (!store.play) throw new Error("Play not found");
   const userInput = store.inputQueue;
-  if (userInput.length === 0) return;
   store.clearInputQueue();
   store.setProcessingUserInput(true);
   await store.play.processTurn(userInput);
   store.setProcessingUserInput(false);
   return store.play.getState();
-};
+}
 
 /**
  * Process character turn
  */
-const processCharacterTurn = async () => {
+async function processCharacterTurn() {
   console.log("Processing character turn");
   const store = getTheaterState();
-  if (!store.play) return;
-  store.play.nextTurn();
+  if (!store.play) throw new Error("Play not found");
   store.setProcessingCharacter(store.play.currentTurnEntity.id);
+  store.play.nextTurn();
   await store.play.processTurn();
   store.setProcessingCharacter(null);
   return store.play.getState();
-};
+}
 
 /**
  * Process the next turn
  */
-const processNextTurn = async (): Promise<Promise<void>[]> => {
+async function processNextTurn(): Promise<Promise<void>[]> {
   console.log("Processing next turn");
   const store = getTheaterState();
   const nextState =
@@ -47,8 +46,6 @@ const processNextTurn = async (): Promise<Promise<void>[]> => {
       : await processCharacterTurn();
 
   // Update game state
-  if (!nextState) return [];
-  store.incrementTurn();
   store.setCharacters(nextState.characters);
   store.setScene(nextState.scene);
 
@@ -56,30 +53,33 @@ const processNextTurn = async (): Promise<Promise<void>[]> => {
   return nextState.characters
     .filter((c) => c.speech)
     .map((c) => speak(c.name, c.speech));
-};
+}
 
 /**
  * Run the turn loop
  */
-const runTurnLoop = async () => {
-  let currentSpeech = [Promise.resolve()];
+async function runTurnLoop() {
+  let currentSpeeches = [Promise.resolve()];
   while (getTheaterState().autoRun) {
-    const { play, addError } = getTheaterState();
     try {
-      if (!play) throw new Error("Play not found");
-      const [nextSpeech] = await Promise.all([
+      const [nextSpeeches] = await Promise.all([
         processNextTurn(),
-        currentSpeech,
+        Promise.all(currentSpeeches).then(() => {
+          const { play, setActiveCharacter } = getTheaterState();
+          setActiveCharacter(play.currentTurnEntity.id);
+        }),
       ]);
-      currentSpeech = nextSpeech;
+
+      currentSpeeches = nextSpeeches;
+      getTheaterState().incrementTurn();
     } catch (error) {
       console.error(error);
-      addError(error as Error);
+      getTheaterState().addError(error as Error);
     } finally {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
-};
+}
 
 /**
  * PlayRunner component
