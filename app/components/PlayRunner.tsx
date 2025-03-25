@@ -39,15 +39,17 @@ async function processCharacterTurn() {
  */
 async function processNextTurn(): Promise<Promise<void>[]> {
   console.log("Processing next turn");
-  const store = getTheaterState();
+  const { inputQueue } = getTheaterState();
   const nextState =
-    store.inputQueue.length > 0
+    inputQueue.length > 0
       ? await processUserInput()
       : await processCharacterTurn();
 
   // Update game state
+  const store = getTheaterState();
   store.setCharacters(nextState.characters);
   store.setScene(nextState.scene);
+  store.setTurnOrder(store.play.getTurnOrder());
 
   // Return the promise of all the characters speaking
   return nextState.characters

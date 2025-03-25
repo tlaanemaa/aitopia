@@ -11,6 +11,7 @@ import { Ai } from './Ai';
 export abstract class Entity {
   public readonly id = uuidv4();
   public abstract readonly name: string;
+  public abstract readonly avatar: string;
   protected memory = new Memory(20);
 
   constructor(

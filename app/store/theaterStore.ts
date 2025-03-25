@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { Play } from "@/theater-core";
-import type { CharacterState, MemoryItem } from "@/theater-core";
+import type { CharacterState, MemoryItem, TurnOrder } from "@/theater-core";
 import { getSettings } from "./settingsStore";
 import { AVATAR_URLS } from '../constants'
 
@@ -18,6 +18,7 @@ interface TheaterStore {
     characters: CharacterState[];
     activeCharacterId: string | null;     // Who is visually active (speaking)
     processingCharacterId: string | null; // Who is being processed
+    turnOrder: TurnOrder;
     inputQueue: string[];
     isProcessing: boolean;
     isProcessingUserInput: boolean;
@@ -31,6 +32,7 @@ interface TheaterStore {
     setCharacters: (characters: CharacterState[]) => void;
     setActiveCharacter: (id: string | null) => void;
     setProcessingCharacter: (id: string | null) => void;
+    setTurnOrder: (turnOrder: TurnOrder) => void;
     queueInput: (input: string) => void;
     clearInputQueue: () => void;
     setProcessing: (isProcessing: boolean) => void;
@@ -56,6 +58,7 @@ export const useTheaterStore = create<TheaterStore>()(
         characters: [],
         activeCharacterId: null,
         processingCharacterId: null,
+        turnOrder: [],
         inputQueue: [],
         isProcessing: false,
         isProcessingUserInput: false,
@@ -76,6 +79,8 @@ export const useTheaterStore = create<TheaterStore>()(
             processingCharacterId: id,
             ...(!state.activeCharacterId ? { activeCharacterId: id } : {})
         })),
+
+        setTurnOrder: (turnOrder) => set({ turnOrder }),
 
         queueInput: (input) => set((state) => ({
             inputQueue: [...state.inputQueue, input]

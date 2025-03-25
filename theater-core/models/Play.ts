@@ -10,10 +10,10 @@ import { Ai, AiConfig } from './Ai';
  * Main class representing a theatrical play
  */
 export class Play {
-  public readonly ai: Ai;
-  private director: Director;
-  private turnOrder: Entity[] = [];
-  private currentTurnIndex: number = 0;
+  public ai: Ai;
+  public turnOrder: Entity[] = [];
+  public director: Director;
+  public currentTurnIndex: number = 0;
   private readonly entityRegistry = new EntityRegistry();
   private readonly assetRegistry = new AssetRegistry();
   private currentEvents: EnrichedEvent[] = [];
@@ -142,5 +142,16 @@ export class Play {
       scene: this.currentScene,
       directorLog: this.director.getLog(),
     };
+  }
+
+  /**
+   * Get the turn order
+   */
+  public getTurnOrder() {
+    return this.turnOrder.map(e => ({
+      id: e.id,
+      name: e.name,
+      avatar: e.avatar,
+    }));
   }
 }
