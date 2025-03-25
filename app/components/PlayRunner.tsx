@@ -62,6 +62,7 @@ async function runTurnLoop() {
   let currentSpeeches = [Promise.resolve()];
   while (getTheaterState().autoRun) {
     try {
+      getTheaterState().incrementTurn();
       const [nextSpeeches] = await Promise.all([
         processNextTurn(),
         Promise.all(currentSpeeches).then(() => {
@@ -71,7 +72,6 @@ async function runTurnLoop() {
       ]);
 
       currentSpeeches = nextSpeeches;
-      getTheaterState().incrementTurn();
     } catch (error) {
       console.error(error);
       getTheaterState().addError(error as Error);
