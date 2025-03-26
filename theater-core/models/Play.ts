@@ -136,22 +136,17 @@ export class Play {
       speech: speechEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
       thought: thoughtEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
     }));
+    const turnOrder = this.turnOrder.map(e => ({
+      id: e.id,
+      name: e.name,
+      avatar: e.avatar,
+    }));
 
     return {
       characters,
       scene: this.currentScene,
       directorLog: this.director.getLog(),
+      turnOrder,
     };
-  }
-
-  /**
-   * Get the turn order
-   */
-  public getTurnOrder() {
-    return this.turnOrder.map(e => ({
-      id: e.id,
-      name: e.name,
-      avatar: e.avatar,
-    }));
   }
 }

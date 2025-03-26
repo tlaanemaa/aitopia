@@ -46,10 +46,7 @@ async function processNextTurn(): Promise<Promise<void>[]> {
       : await processCharacterTurn();
 
   // Update game state
-  const store = getTheaterState();
-  store.setCharacters(nextState.characters);
-  store.setScene(nextState.scene);
-  store.setTurnOrder(store.play.getTurnOrder());
+  getTheaterState().syncPlayState();
 
   // Return the promise of all the characters speaking
   return nextState.characters
@@ -61,7 +58,9 @@ async function processNextTurn(): Promise<Promise<void>[]> {
  * Run the turn loop
  */
 async function runTurnLoop() {
+  getTheaterState().syncPlayState();
   let currentSpeeches = [Promise.resolve()];
+  // It's important to get the new state every time.
   while (getTheaterState().autoRun) {
     try {
       getTheaterState().incrementTurn();

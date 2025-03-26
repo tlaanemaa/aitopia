@@ -16,6 +16,3 @@ export type { EnrichedEvent, CharacterEnterEvent } from './types/events';
 export type { Position } from './types/events';
 export type { AiConfig } from './models/Ai';
 export type PlayState = ReturnType<typeof Play.prototype.getState>;
-export type TurnOrder = ReturnType<typeof Play.prototype.getTurnOrder>;
-export type CharacterState = PlayState['characters'][number];
-export type { MemoryItem } from './models/Memory';
