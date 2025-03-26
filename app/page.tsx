@@ -10,6 +10,7 @@ import Banner from "./components/Banner";
 import Settings from "./components/Settings";
 import SettingsButton from "./components/SettingsButton";
 import PlayRunner from "./components/PlayRunner";
+import TurnIndicator from "./components/TurnIndicator";
 
 export default function Home() {
   const isStarted = useTheaterStore().turnCount > 0;
@@ -20,6 +21,7 @@ export default function Home() {
       <ActionLog />
       <Stage />
       <TurnCounter />
+      <TurnIndicator />
       <AnimatePresence>{!isStarted && <Banner />}</AnimatePresence>
       <UserInput />
       <SettingsButton />

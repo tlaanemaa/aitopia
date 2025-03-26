@@ -146,7 +146,7 @@ function buildRuntimeCharacterEventSchemas(characterNames: [string, ...string[]]
  */
 const SceneChangeEventSchema = BaseEventSchema.extend({
   type: z.literal('scene_change'),
-  newSceneDescription: z.string().describe('Description of the new scene')
+  newSceneDescription: z.string().describe('Concise description of the new scene')
 }).describe('Event to describe a scene change');
 
 /**
