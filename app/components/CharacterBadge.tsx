@@ -15,7 +15,7 @@ export default function CharacterBadge({ characterId }: CharacterBadgeProps) {
 
   const isActive = characterId === activeCharacterId;
   const isProcessing = characterId === processingCharacterId;
-  console.log(characterId, isProcessing, isActive);
+
   return (
     <div className="relative w-12 h-12 m-0 p-0">
       {isProcessing && isActive ? (
