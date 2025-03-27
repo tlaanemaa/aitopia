@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTheaterStore } from "../store/theaterStore";
+import { motion } from "framer-motion";
 
 export default function UserInput() {
   const { turnCount, setAutoRun, queueInput } = useTheaterStore();
@@ -19,24 +20,33 @@ export default function UserInput() {
     }
   };
 
+  const isInitialState = turnCount === 0;
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center p-2">
-      <div className="flex items-center space-x-2 w-full max-w-2xl bg-white p-2 rounded-full shadow-lg">
+    <motion.div 
+      className="fixed bottom-0 left-0 right-0 flex items-center justify-center p-2"
+      initial={isInitialState ? { y: 20, opacity: 0 } : false}
+      animate={isInitialState ? { y: 0, opacity: 1 } : false}
+      transition={{ duration: 0.5, delay: 2 }}
+    >
+      <div className="flex items-center space-x-2 w-full max-w-2xl bg-white/5 backdrop-blur-sm p-2 rounded-full shadow-lg border border-white/5">
         <input
           type="text"
-          placeholder="Type your instructions..."
+          placeholder={isInitialState ? "Begin your story..." : "Type your instructions..."}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-grow py-2 px-4 rounded-full focus:outline-none disabled:bg-gray-200 bg-white text-gray-900 min-w-1"
+          className="flex-grow py-2 px-4 rounded-full focus:outline-none disabled:bg-gray-200 bg-transparent text-white placeholder-white/30 min-w-1"
         />
-        <button
+        <motion.button
           onClick={sendInput}
-          className="px-4 py-2 bg-gray-800 text-white rounded-full hover:bg-gray-900 disabled:bg-gray-500 whitespace-nowrap"
+          className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-full transition-colors disabled:bg-gray-500 whitespace-nowrap"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          {turnCount > 0 ? "Next Turn" : "Start game"}
-        </button>
+          {isInitialState ? "Begin" : "Next Turn"}
+        </motion.button>
       </div>
-    </div>
+    </motion.div>
   );
 }
