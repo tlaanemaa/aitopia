@@ -7,14 +7,19 @@ interface CharacterBadgeProps {
 }
 
 export default function CharacterBadge({ characterId }: CharacterBadgeProps) {
-  const { activeCharacterId, processingCharacterId, turnOrder } =
-    useTheaterStore();
+  const {
+    activeCharacterId,
+    processingCharacterId,
+    turnOrder,
+    isProcessingUserInput,
+  } = useTheaterStore();
 
   const entity = turnOrder.find((e) => e.id === characterId);
   if (!entity) return null;
 
-  const isActive = characterId === activeCharacterId;
-  const isProcessing = characterId === processingCharacterId;
+  const isActive = characterId === activeCharacterId && !isProcessingUserInput;
+  const isProcessing =
+    characterId === processingCharacterId && !isProcessingUserInput;
 
   return (
     <div className="relative w-12 h-12 m-0 p-0">

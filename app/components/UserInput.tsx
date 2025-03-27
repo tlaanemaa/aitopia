@@ -40,7 +40,7 @@ export default function UserInput() {
   const animatedDots = useAnimatedDots(isProcessingUserInput);
 
   const sendInput = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && !isInitialState) return;
 
     // Add to queue with animation
     queueInput(input);
@@ -57,7 +57,7 @@ export default function UserInput() {
   const isInitialState = turnCount === 0;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center p-6">
+    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center p-3">
       {/* Queue Visualization */}
       <AnimatePresence>
         {inputQueue.length > 0 && (
@@ -78,7 +78,7 @@ export default function UserInput() {
                     duration: 0.3,
                     ease: [0.16, 1, 0.3, 1],
                   }}
-                  className="text-xs text-white/50 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/5"
+                  className="text-sm text-white/50 bg-black/60 backdrop-blur-md px-6 py-1 rounded-full border border-white/5"
                 >
                   {text}
                 </motion.div>
@@ -90,7 +90,7 @@ export default function UserInput() {
 
       {/* Input Field */}
       <motion.div
-        className="relative flex items-center w-full max-w-3xl bg-black/80 backdrop-blur-md p-[1px] rounded-full border border-white/10 overflow-hidden"
+        className="relative flex items-center w-full max-w-3xl bg-gray-400/10 backdrop-blur-md p-[1px] rounded-full border border-1 border-white/30 overflow-hidden"
         initial={isInitialState ? { y: 20, opacity: 0 } : false}
         animate={isInitialState ? { y: 0, opacity: 1 } : false}
         transition={{ duration: 1, delay: 2, ease: [0.16, 1, 0.3, 1] }}
@@ -118,7 +118,7 @@ export default function UserInput() {
           type="text"
           placeholder={
             isProcessingUserInput
-              ? `Processing${animatedDots}`
+              ? `Crafting your narrative${animatedDots}`
               : isInitialState
               ? "Begin your story..."
               : "Type your instructions..."
@@ -126,7 +126,7 @@ export default function UserInput() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-grow h-12 px-6 rounded-full focus:outline-none bg-transparent text-white placeholder-white/30 min-w-1 relative z-10 text-base font-light tracking-wide"
+          className="flex-grow h-12 px-6 rounded-full text-md focus:outline-none bg-transparent text-white placeholder-white/30 min-w-1 relative z-10 text-base font-light tracking-wide"
         />
         <motion.div className="h-12 w-[1px] bg-gradient-to-b from-white/0 via-white/10 to-white/0" />
         <motion.button

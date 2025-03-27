@@ -9,7 +9,7 @@ export default function SceneBackground({ description }: SceneBackgroundProps) {
       <div className="absolute inset-0" />
 
       {/* Scene description overlay */}
-      <div className="absolute top-4 left-20 right-20 p-4 text-white/70 text-lg text-center">
+      <div className="absolute top-4 left-20 right-20 p-4 text-white/80 text-lg text-center">
         {description}
       </div>
     </div>
