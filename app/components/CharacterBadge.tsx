@@ -1,26 +1,19 @@
 import Image from "next/image";
 import { getAvatarUrl } from "../constants";
-import { useTheaterStore } from "../store/theaterStore";
 
 interface CharacterBadgeProps {
-  characterId: string;
+  avatar: string;
+  name: string;
+  isActive: boolean;
+  isProcessing: boolean;
 }
 
-export default function CharacterBadge({ characterId }: CharacterBadgeProps) {
-  const {
-    activeCharacterId,
-    processingCharacterId,
-    turnOrder,
-    isProcessingUserInput,
-  } = useTheaterStore();
-
-  const entity = turnOrder.find((e) => e.id === characterId);
-  if (!entity) return null;
-
-  const isActive = characterId === activeCharacterId && !isProcessingUserInput;
-  const isProcessing =
-    characterId === processingCharacterId && !isProcessingUserInput;
-
+export default function CharacterBadge({
+  avatar,
+  name,
+  isActive,
+  isProcessing,
+}: CharacterBadgeProps) {
   return (
     <div className="relative w-12 h-12 m-0 p-0">
       {isProcessing && isActive ? (
@@ -32,8 +25,8 @@ export default function CharacterBadge({ characterId }: CharacterBadgeProps) {
       )}
       <div className="rounded-full bg-black/20 p-2 w-full h-full flex items-center justify-center">
         <Image
-          src={getAvatarUrl(entity.avatar)}
-          alt={entity.name}
+          src={getAvatarUrl(avatar)}
+          alt={name}
           width={32}
           height={32}
           className="rounded-full"

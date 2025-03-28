@@ -157,9 +157,9 @@ export class Character extends Entity {
         if (!source) return;
         this.position = event.position;
         if (source.id === this.id) {
-            this.memory.add(`I moved to position (${event.position.x}, ${event.position.y})`);
+            this.memory.add(`I moved to position (x=${event.position.x}, y=${event.position.y})`);
         } else if (isInRange(event.position, this.position, this.perception.radius.sight)) {
-            this.memory.add(`${source.name} moved to position (${event.position.x}, ${event.position.y})`);
+            this.memory.add(`${source.name} moved to position (x=${event.position.x}, y=${event.position.y})`);
         }
     }
 
@@ -181,7 +181,8 @@ export class Character extends Entity {
     }
 
     private handleCharacterExit(event: Extract<WorldEvent, { type: 'character_exit' }>): void {
-        const source = this.entityRegistry.getEntity(event.characterId)!
+        const source = this.entityRegistry.getEntity(event.characterId)
+        if (!source) return;
         this.memory.add(`${source.name} has left`);
     }
 

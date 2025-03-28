@@ -5,6 +5,9 @@ import { useTheaterStore, getTheaterState } from "../store/theaterStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { speak, initializeVoices } from "../utils/voice";
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const MIN_TURN_TIME = 2000;
+
 /**
  * Process user input
  */
@@ -39,14 +42,14 @@ async function processCharacterTurn() {
  */
 async function processNextTurn(): Promise<Promise<void>[]> {
   console.log("Processing next turn");
-  const { inputQueue } = getTheaterState();
+  const { inputQueue, syncPlayState } = getTheaterState();
   const nextState =
     inputQueue.length > 0
       ? await processUserInput()
       : await processCharacterTurn();
 
   // Update game state
-  getTheaterState().syncPlayState();
+  syncPlayState();
 
   // Return the promise of all the characters speaking
   return nextState.characters
@@ -57,13 +60,20 @@ async function processNextTurn(): Promise<Promise<void>[]> {
 /**
  * Run the turn loop
  */
+let isRunning = false;
 async function runTurnLoop() {
-  getTheaterState().syncPlayState();
+  if (isRunning) return;
+  isRunning = true;
+
+  const { syncPlayState, incrementTurn, addError } = getTheaterState();
+  syncPlayState();
   let currentSpeeches = [Promise.resolve()];
+
   // It's important to get the new state every time.
   while (getTheaterState().autoRun) {
+    const startTime = Date.now();
     try {
-      getTheaterState().incrementTurn();
+      incrementTurn();
       const [nextSpeeches] = await Promise.all([
         processNextTurn(),
         Promise.all(currentSpeeches).then(() => {
@@ -75,11 +85,13 @@ async function runTurnLoop() {
       currentSpeeches = nextSpeeches;
     } catch (error) {
       console.error(error);
-      getTheaterState().addError(error as Error);
+      addError(error as Error);
     } finally {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await wait(Math.max(0, MIN_TURN_TIME - (Date.now() - startTime)));
     }
   }
+
+  isRunning = false;
 }
 
 /**

@@ -131,7 +131,7 @@ export class Director extends Entity {
           this.memory.add(`${subject.name} felt: ${event.emotion}`);
           break;
         case 'movement':
-          this.memory.add(`${subject.name} moved to ${event.position}`);
+          this.memory.add(`${subject.name} moved to position (x=${event.position.x}, y=${event.position.y})`);
           break;
         case 'thought':
           this.memory.add(`${subject.name} thought: ${event.content}`);

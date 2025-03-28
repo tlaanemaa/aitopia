@@ -1,43 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTheaterStore } from "../store/theaterStore";
-import { motion, AnimatePresence } from "framer-motion";
-
-function useAnimatedDots(isProcessing: boolean) {
-  const [dots, setDots] = useState("");
-
-  useEffect(() => {
-    if (!isProcessing) {
-      setDots("");
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setDots((prev) => {
-        if (prev === "") return ".";
-        if (prev === ".") return "..";
-        if (prev === "..") return "...";
-        return ".";
-      });
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [isProcessing]);
-
-  return dots;
-}
+import { motion } from "framer-motion";
+import { useEllipsis } from "../hooks/useEllipsis";
+import InputQueue from "./InputQueue";
 
 export default function UserInput() {
-  const {
-    turnCount,
-    setAutoRun,
-    queueInput,
-    inputQueue,
-    isProcessingUserInput,
-  } = useTheaterStore();
+  const { turnCount, setAutoRun, queueInput, isProcessingUserInput } =
+    useTheaterStore();
   const [input, setInput] = useState("");
-  const animatedDots = useAnimatedDots(isProcessingUserInput);
+  const ellipsis = useEllipsis(isProcessingUserInput);
 
   const sendInput = async () => {
     if (!input.trim() && !isInitialState) return;
@@ -59,38 +32,11 @@ export default function UserInput() {
   return (
     <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center p-3">
       {/* Queue Visualization */}
-      <AnimatePresence>
-        {inputQueue.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="w-full max-w-3xl mb-2"
-          >
-            <div className="space-y-1">
-              {inputQueue.map((text, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{
-                    duration: 0.3,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
-                  className="text-sm text-white/50 bg-black/60 backdrop-blur-md px-6 py-1 rounded-full border border-white/5"
-                >
-                  {text}
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <InputQueue />
 
       {/* Input Field */}
       <motion.div
-        className="relative flex items-center w-full max-w-3xl bg-gray-400/10 backdrop-blur-md p-[1px] rounded-full border border-1 border-white/30 overflow-hidden"
+        className="flex items-stretch p-2 w-full max-w-2xl bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-lg shadow-black/20 overflow-hidden"
         initial={isInitialState ? { y: 20, opacity: 0 } : false}
         animate={isInitialState ? { y: 0, opacity: 1 } : false}
         transition={{ duration: 1, delay: 2, ease: [0.16, 1, 0.3, 1] }}
@@ -101,13 +47,13 @@ export default function UserInput() {
             className="absolute inset-0"
             animate={{
               background: [
-                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.02) 75%, transparent 100%)",
-                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.02) 75%, transparent 100%)",
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%, transparent 100%)",
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%, transparent 100%)",
               ],
               x: ["-100%", "100%"],
             }}
             transition={{
-              duration: 3,
+              duration: 2,
               repeat: Infinity,
               ease: "linear",
             }}
@@ -118,7 +64,7 @@ export default function UserInput() {
           type="text"
           placeholder={
             isProcessingUserInput
-              ? `Crafting your narrative${animatedDots}`
+              ? `Crafting your narrative${ellipsis}`
               : isInitialState
               ? "Begin your story..."
               : "Type your instructions..."
@@ -126,13 +72,12 @@ export default function UserInput() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-grow h-12 px-6 rounded-full text-md focus:outline-none bg-transparent text-white placeholder-white/30 min-w-1 relative z-10 text-base font-light tracking-wide"
+          className="flex-grow h-11 px-5 rounded-full text-base focus:outline-none bg-transparent text-white placeholder-white/40 min-w-1 tracking-wide transition-colors duration-200 focus:placeholder-white/60"
         />
-        <motion.div className="h-12 w-[1px] bg-gradient-to-b from-white/0 via-white/10 to-white/0" />
         <motion.button
           onClick={sendInput}
           disabled={!input.trim() && !isInitialState}
-          className="h-12 px-8 text-base rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap relative z-20 text-white/90 hover:text-white font-light tracking-wide"
+          className="px-7 text-base rounded-full disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap bg-white/90 hover:bg-white text-black tracking-wide cursor-pointer transition-all duration-200 disabled:hover:bg-white/90 shadow-lg shadow-black/10"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >

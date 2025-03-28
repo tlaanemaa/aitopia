@@ -9,12 +9,14 @@ export default function ActionLog() {
   const actionLog = [
     ...directorLog.map((item) => ({
       timestamp: item.timestamp,
-      text: `${item.timestamp.toLocaleTimeString()}: ${item.content}`,
+      text: `${item.timestamp.toLocaleTimeString("en-US")}: ${item.content}`,
       isError: false,
     })),
     ...errors.map((error) => ({
       timestamp: error.timestamp,
-      text: `${error.timestamp.toLocaleTimeString()}: ERROR - ${error.message}`,
+      text: `${error.timestamp.toLocaleTimeString("en-US")}: ERROR - ${
+        error.message
+      }`,
       isError: true,
     })),
   ].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
