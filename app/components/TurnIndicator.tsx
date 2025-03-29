@@ -13,7 +13,7 @@ export default function TurnIndicator() {
   if (!turnOrder.length) return null;
 
   return (
-    <div className="fixed flex flex-col-reverse right-4 bottom-24 p-2 rounded-lg gap-y-1">
+    <div className="fixed flex flex-col-reverse right-4 bottom-24 p-2 rounded-lg gap-y-2">
       {turnOrder.map((entity) => (
         <div key={entity.id} className="mb-2">
           <CharacterBadge
