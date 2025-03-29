@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { ChatOllama } from "@langchain/ollama";
 import { ChatPromptValueInterface } from "@langchain/core/prompt_values";
 
@@ -23,6 +24,7 @@ export class Ai {
         const llm = new ChatOllama({
             baseUrl: this.baseUrl,
             model: this.model,
+            temperature: 1,
         })
 
         const wrappedSchema = z.object({
@@ -30,8 +32,12 @@ export class Ai {
         });
 
         console.log("Prompting LLM with:", prompt.toString());
-        const structuredLlm = llm.withStructuredOutput(wrappedSchema);
-        const response = await structuredLlm.invoke(prompt);
+        const structuredLlm = llm.withStructuredOutput(zodToJsonSchema(wrappedSchema, {
+            $refStrategy: "none",
+        }));
+        const response = await structuredLlm.invoke(prompt, {
+            timeout: 60000,
+        });
         console.log("LLM responded with:", response);
         return response.events;
     }

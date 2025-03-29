@@ -77,7 +77,7 @@ export default function Character({
           {character.name}
         </div>
         {(displayThought.trim() || character.speech.trim()) && (
-          <div className="absolute bottom-full flex flex-col text-sm p-2 w-[300px] rounded-md items-center space-y-2 bg-black bg-opacity-20 backdrop-blur-sm">
+          <div className="absolute bottom-full flex flex-col text-sm p-2 w-[300px] rounded-md items-center space-y-2 bg-black/30 backdrop-blur-sm">
             {displayThought && (
               <ThoughtBubble text={displayThought} speed={30} />
             )}

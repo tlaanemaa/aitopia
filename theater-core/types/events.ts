@@ -10,12 +10,10 @@ import { z } from 'zod';
 const PositionSchema = z.object({
   x: z
     .number()
-    .describe('Horizontal position in the world. Between 0 and 100, where 0 is the left edge and 100 is the right edge.')
-    .transform(x => Math.min(Math.max(x, 0), 100)),
+    .describe('Horizontal position in the world. Between 0 and 100, where 0 is the left edge and 100 is the right edge.'),
   y: z
     .number()
     .describe('Vertical position in the world. Between 0 and 100, where 0 is the top edge and 100 is the bottom edge.')
-    .transform(y => Math.min(Math.max(y, 0), 100))
 });
 
 export type Position = z.infer<typeof PositionSchema>;
@@ -191,7 +189,7 @@ function buildRuntimeWorldEventSchema(avatars: [string, ...string[]]) {
   return z.union([
     // SceneChangeEventSchema, // The AI is abusing this
     CharacterEnterEventSchema.extend({ avatar: z.enum(avatars).describe('Avatar of the character entering the scene') }),
-    // CharacterExitEventSchema, // The AI is abusing this
+    // CharacterExitEventSchema, // FIXME: Only allow exit when there characters
     GenericWorldEventSchema
   ])
 }
@@ -207,7 +205,10 @@ export function buildDirectorEventSchemas(characterNames: string[], avatars: str
 
   if (characterNames.length < 1) return worldEvents;
   const characterEvents = buildRuntimeCharacterEventSchemas(characterNames as [string, ...string[]])
-  return z.union([characterEvents, worldEvents])
+  return z.union([
+    ...characterEvents.options,
+    ...worldEvents.options,
+  ]);
 }
 
 // ================ Enriched Events ================

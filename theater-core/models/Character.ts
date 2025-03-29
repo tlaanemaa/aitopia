@@ -32,6 +32,7 @@ Recent events and observations:
 
 You are at {position} and feel {emotion}. The time is {time}.
 From your perspective, decide your next move or words. Choose any event type that feels right.
+Return as JSON.
 `;
 
 const promptTemplate = ChatPromptTemplate.fromMessages([
@@ -60,6 +61,7 @@ export class Character extends Entity {
     ) {
         super(ai, entityRegistry, assetRegistry);
         this.perception = new Perception(traits);
+        this.setPosition(position);
     }
 
     /**
@@ -82,6 +84,16 @@ export class Character extends Entity {
             position: this.position
         }));
         return enrichedEvents;
+    }
+
+    /**
+     * Set character position
+     */
+    public setPosition(position: Position): void {
+        this.position = {
+            x: Math.max(0, Math.min(100, position.x)),
+            y: Math.max(0, Math.min(100, position.y))
+        };
     }
 
     /**
@@ -153,7 +165,7 @@ export class Character extends Entity {
     private handleMovement(event: Extract<EnrichedCharacterEvent, { type: 'movement' }>): void {
         const source = this.entityRegistry.getEntity(event.sourceId)
         if (!source) return;
-        this.position = event.position;
+        this.setPosition(event.position);
         if (source.id === this.id) {
             this.memory.add(`I moved to position ${positionToString(event.position)}`);
         } else if (isInRange(event.position, this.position, this.perception.radius.sight)) {

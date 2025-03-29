@@ -62,7 +62,7 @@ class SpeechManager {
       }
 
       // Set up timeout based on text length
-      const timeoutMs = Math.min(text.length * 100 + 3000, 10000); // Cap at 10 seconds
+      const timeoutMs = Math.min(text.length * 300 + 3000, 20000); // Cap at 20 seconds
       const timeout = setTimeout(() => {
         console.log("Speech timed out");
         if (this.currentUtterance) {
