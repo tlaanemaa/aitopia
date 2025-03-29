@@ -22,7 +22,7 @@ export default function ActionLog() {
   ].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
   return (
-    <div className="fixed flex flex-col justify-end top-0 left-0 bottom-0 text-sm pb-20 pl-4 opacity-25 align-middle text-left space-y-1">
+    <div className="fixed flex flex-col justify-end top-0 left-0 bottom-0 text-sm pb-24 pl-4 opacity-25 align-middle text-left space-y-1">
       {actionLog.map((action, index) => (
         <div
           key={index}

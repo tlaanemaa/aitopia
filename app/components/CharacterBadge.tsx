@@ -15,23 +15,17 @@ export default function CharacterBadge({
   isProcessing,
 }: CharacterBadgeProps) {
   return (
-    <div className="relative w-12 h-12 m-0 p-0">
-      {isProcessing && isActive ? (
+    <div className="relative w-12 h-12 m-0 p-0 rounded-full flex items-center justify-center z-50">
+      <div className="relative rounded-full bg-black/50 w-full h-full overflow-hidden">
+        <Image src={getAvatarUrl(avatar)} alt={name} height={50} width={50} />
+      </div>
+      {isProcessing ? (
         <div className="absolute -inset-1 rounded-full animate-spin border-2 border-transparent border-t-white/70 border-r-white/70" />
       ) : isActive ? (
         <div className="absolute -inset-1 rounded-full border-2 border-white/70" />
       ) : (
-        <div className="absolute -inset-1 rounded-full border-2 border-white/20" />
+        <div className="absolute -inset-1 rounded-full border-2 border-white/10" />
       )}
-      <div className="rounded-full bg-black/20 p-2 w-full h-full flex items-center justify-center">
-        <Image
-          src={getAvatarUrl(avatar)}
-          alt={name}
-          width={32}
-          height={32}
-          className="rounded-full"
-        />
-      </div>
     </div>
   );
 }

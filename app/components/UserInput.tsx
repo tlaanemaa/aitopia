@@ -36,7 +36,7 @@ export default function UserInput() {
 
       {/* Input Field */}
       <motion.div
-        className="flex items-stretch p-2 w-full max-w-2xl bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-lg shadow-black/20 overflow-hidden"
+        className="flex items-stretch p-2 w-full max-w-2xl bg-black/40 backdrop-blur-xl rounded-full border border-2 border-white/10 shadow-lg shadow-black/20 overflow-hidden"
         initial={isInitialState ? { y: 20, opacity: 0 } : false}
         animate={isInitialState ? { y: 0, opacity: 1 } : false}
         transition={{ duration: 1, delay: 2, ease: [0.16, 1, 0.3, 1] }}

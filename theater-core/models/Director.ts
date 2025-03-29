@@ -67,7 +67,7 @@ const userInputPromptTemplate = ChatPromptTemplate.fromMessages([
  */
 export class Director extends Entity {
   public readonly name = 'Director';
-  public readonly avatar = 'apexwolves.gif'; // FIXME: Find a better avatar
+  public readonly avatar = 'director.png';
   protected memorySize = 100;
 
   /**

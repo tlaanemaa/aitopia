@@ -74,7 +74,7 @@ export default function Character({
             width={CHARACTER_WIDTH}
             height={CHARACTER_HEIGHT}
             className={clsx(
-              "rounded-full transition-all duration-300",
+              "transition-all duration-300",
               character.visualState === "speaking" &&
                 "ring-4 ring-yellow-400 ring-opacity-50",
               character.visualState === "processing" &&
