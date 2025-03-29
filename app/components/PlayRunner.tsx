@@ -4,9 +4,11 @@ import { useEffect } from "react";
 import { useTheaterStore, getTheaterState } from "../store/theaterStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { speak, initializeVoices } from "../utils/voice";
+import { PlayState } from "@/theater-core";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const MIN_TURN_TIME = 2000;
+let CURRENT_TURN_LOOP: Promise<void> = Promise.resolve();
 
 /**
  * Process user input
@@ -40,58 +42,58 @@ async function processCharacterTurn() {
 /**
  * Process the next turn
  */
-async function processNextTurn(): Promise<Promise<void>[]> {
+async function processNextTurn(): Promise<PlayState> {
   console.log("Processing next turn");
-  const { inputQueue, syncPlayState } = getTheaterState();
-  const nextState =
+  const { inputQueue } = getTheaterState();
+  const newState =
     inputQueue.length > 0
       ? await processUserInput()
       : await processCharacterTurn();
 
-  // Update game state
-  syncPlayState();
+  return newState;
+}
 
-  // Return the promise of all the characters speaking
-  return nextState.characters
-    .filter((c) => c.speech)
-    .map((c) => speak(c.name, c.speech));
+/**
+ * Read out speeches in order
+ */
+async function readSpeeches(state: PlayState) {
+  const { setActiveCharacter } = getTheaterState();
+  const speakers = state.characters.filter((c) => c.speech);
+
+  for (const speaker of speakers) {
+    setActiveCharacter(speaker.id);
+    await speak(speaker.name, speaker.speech);
+    setActiveCharacter(null);
+  }
 }
 
 /**
  * Run the turn loop
  */
-let isRunning = false;
 async function runTurnLoop() {
-  if (isRunning) return;
-  isRunning = true;
-
+  let currentSpeeches: Promise<void> = Promise.resolve();
   const { syncPlayState, incrementTurn, addError } = getTheaterState();
   syncPlayState();
-  let currentSpeeches = [Promise.resolve()];
 
   // It's important to get the new state every time.
   while (getTheaterState().autoRun) {
-    const startTime = Date.now();
+    const turnStartTime = Date.now();
     try {
       incrementTurn();
-      const [nextSpeeches] = await Promise.all([
+      const [nextState] = await Promise.all([
         processNextTurn(),
-        Promise.all(currentSpeeches).then(() => {
-          const { play, setActiveCharacter } = getTheaterState();
-          setActiveCharacter(play.currentTurnEntity.id);
-        }),
+        currentSpeeches,
       ]);
 
-      currentSpeeches = nextSpeeches;
+      syncPlayState();
+      currentSpeeches = readSpeeches(nextState);
     } catch (error) {
       console.error(error);
       addError(error as Error);
     } finally {
-      await wait(Math.max(0, MIN_TURN_TIME - (Date.now() - startTime)));
+      await wait(Math.max(0, MIN_TURN_TIME - (Date.now() - turnStartTime)));
     }
   }
-
-  isRunning = false;
 }
 
 /**
@@ -113,10 +115,11 @@ export default function PlayRunner() {
   }, [modelName, endpoint, play]);
 
   /**
-   * Trigger the turn loop when autoRun is true
+   * Trigger a new turn loop to start after the previous loop
+   * has finished if autoRun is true
    */
   useEffect(() => {
-    if (autoRun) runTurnLoop();
+    if (autoRun) CURRENT_TURN_LOOP = CURRENT_TURN_LOOP.finally(runTurnLoop);
   }, [autoRun]);
 
   // Initialize voices

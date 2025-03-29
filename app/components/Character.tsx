@@ -12,15 +12,9 @@ import {
 } from "../constants";
 import { CharacterState } from "@/theater-core";
 
-interface CharacterProps {
-  id: string;
-  name: string;
-  avatar: string;
-  position: { x: number; y: number };
-  emotion: CharacterState["emotion"];
-  speech?: string;
-  thought?: string;
-  visualState?: "speaking" | "thinking" | "processing" | "idle";
+interface CharacterProps extends CharacterState {
+  active: boolean;
+  processing: boolean;
 }
 
 export default function Character({
@@ -28,6 +22,11 @@ export default function Character({
 }: Readonly<{ character: CharacterProps }>) {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [screenHeight, setScreenHeight] = useState(window.innerHeight);
+  const [lastThought, setLastThought] = useState(character.thought);
+
+  useEffect(() => {
+    if (character.thought) setLastThought(character.thought);
+  }, [character.thought]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -49,44 +48,35 @@ export default function Character({
     CHARACTER_HEIGHT / 2;
 
   // If processing, show a thinking message
-  const displayThought =
-    character.visualState === "processing"
-      ? "Hmm... what should I do next?"
-      : character.thought;
+  const displayThought = lastThought
+    ? "Hmm... what should I do next?"
+    : character.thought;
 
   return (
     <div
-      className="fixed top-0 left-0 transition-transform duration-[2000ms]"
+      className={clsx(
+        "fixed top-0 left-0 transition-transform duration-[2000ms]",
+        character.active && "z-10"
+      )}
       style={{
         transform: `translate(${offsetX}px, ${offsetY}px)`,
       }}
     >
-      <div
-        className={clsx(
-          "relative flex flex-col items-center transition-all duration-300",
-          character.visualState === "speaking" && "scale-110"
-        )}
-      >
+      <div className="relative flex flex-col items-center transition-all duration-300">
         <div className="relative">
           <Image
             src={getAvatarUrl(character.avatar)}
             alt={character.name}
             width={CHARACTER_WIDTH}
             height={CHARACTER_HEIGHT}
-            className={clsx(
-              "transition-all duration-300",
-              character.visualState === "speaking" &&
-                "ring-4 ring-yellow-400 ring-opacity-50",
-              character.visualState === "processing" &&
-                "ring-2 ring-blue-400 ring-opacity-30"
-            )}
+            className="transition-all duration-300"
           />
           <CharacterEmotion emotion={character.emotion} />
         </div>
         <div className="absolute -bottom-7 p-1 rounded-md text-center text-lg font-semibold bg-opacity-20 bg-black whitespace-pre">
           {character.name}
         </div>
-        {(displayThought || character.speech) && (
+        {(displayThought.trim() || character.speech.trim()) && (
           <div className="absolute bottom-full flex flex-col text-sm p-2 w-[300px] rounded-md items-center space-y-2 bg-black bg-opacity-20 backdrop-blur-sm">
             {displayThought && (
               <ThoughtBubble text={displayThought} speed={30} />

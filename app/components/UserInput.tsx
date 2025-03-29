@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useTheaterStore } from "../store/theaterStore";
 import { motion } from "framer-motion";
 import { useEllipsis } from "../hooks/useEllipsis";
@@ -11,23 +11,20 @@ export default function UserInput() {
     useTheaterStore();
   const [input, setInput] = useState("");
   const ellipsis = useEllipsis(isProcessingUserInput);
+  const isInitialState = turnCount === 0;
 
-  const sendInput = async () => {
-    if (!input.trim() && !isInitialState) return;
-
-    // Add to queue with animation
-    queueInput(input);
-    setAutoRun(true);
+  const sendInput = useCallback(async () => {
+    const trimmedInput = input.trim();
+    if (trimmedInput) queueInput(trimmedInput);
+    if (isInitialState) setAutoRun(true);
     setInput("");
-  };
+  }, [input, queueInput, setAutoRun, isInitialState]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && input.trim()) {
       sendInput();
     }
   };
-
-  const isInitialState = turnCount === 0;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center p-3">
@@ -36,7 +33,7 @@ export default function UserInput() {
 
       {/* Input Field */}
       <motion.div
-        className="flex items-stretch p-2 w-full max-w-2xl bg-black/40 backdrop-blur-xl rounded-full border border-2 border-white/10 shadow-lg shadow-black/20 overflow-hidden"
+        className="flex items-stretch p-2 w-full max-w-2xl bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-lg shadow-black/20 overflow-hidden"
         initial={isInitialState ? { y: 20, opacity: 0 } : false}
         animate={isInitialState ? { y: 0, opacity: 1 } : false}
         transition={{ duration: 1, delay: 2, ease: [0.16, 1, 0.3, 1] }}

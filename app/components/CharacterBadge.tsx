@@ -15,7 +15,7 @@ export default function CharacterBadge({
   isProcessing,
 }: CharacterBadgeProps) {
   return (
-    <div className="relative w-12 h-12 m-0 p-0 rounded-full flex items-center justify-center z-50">
+    <div className="relative w-12 h-12 m-0 p-0 rounded-full flex items-center justify-center">
       <div className="relative rounded-full bg-black/50 w-full h-full overflow-hidden">
         <Image src={getAvatarUrl(avatar)} alt={name} height={50} width={50} />
       </div>
