@@ -162,8 +162,8 @@ export type CharacterEnterEvent = z.infer<typeof CharacterEnterEventSchema>;
  */
 const CharacterExitEventSchema = BaseEventSchema.extend({
   type: z.literal('character_exit'),
-  characterId: z.string().describe('ID of the character exiting the scene'),
-  description: z.string().optional().describe('Optional description of how the character exits')
+  characterId: z.string().describe('ID of the character leaving the scene'),
+  description: z.string().optional().describe('Optional description of how the character leaves')
 }).describe('Use this if you want to remove a character from the world');
 
 /**
@@ -190,7 +190,7 @@ export type WorldEvent = z.infer<typeof WorldEventSchema>;
  */
 function buildRuntimeWorldEventSchema(avatars: [string, ...string[]]) {
   return z.union([
-    SceneChangeEventSchema,
+    // SceneChangeEventSchema, // The AI is abusing this
     CharacterEnterEventSchema.extend({ avatar: z.enum(avatars).describe('Avatar of the character entering the scene') }),
     CharacterExitEventSchema,
     GenericWorldEventSchema
@@ -216,4 +216,3 @@ export function buildDirectorEventSchemas(characterNames: string[], avatars: str
  * Enriched event type
  */
 export type EnrichedEvent = EnrichedCharacterEvent | WorldEvent;
-

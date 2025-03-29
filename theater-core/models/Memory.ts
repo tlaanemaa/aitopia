@@ -28,7 +28,7 @@ export class Memory {
      * Get memories as a string
      */
     public getMemories(): string {
-        return this.items.map(m => `- ${m.timestamp.toLocaleTimeString("en-US")} - ${m.content}`).join('\n');
+        return this.items.map(m => `- ${m.timestamp.toLocaleTimeString("en-US")}: ${m.content}`).join('\n');
     }
 
     /**

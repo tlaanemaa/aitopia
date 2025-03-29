@@ -5,7 +5,7 @@ import {
     Trait,
     WorldEvent
 } from '../types/events';
-import { isInRange } from '../utils/util';
+import { isInRange, positionToString } from '../utils/util';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { Perception } from './Perception';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
@@ -16,24 +16,39 @@ import { Ai } from './Ai';
 import { AssetRegistry } from '../service/AssetRegistry';
 
 const SYSTEM_PROMPT = `
-You are a character named {name}.
-Always respond as {name} and describe your actions in the first person.
+You are {name}, a real person with your own history, motivations, and feelings. 
+See the world entirely through your own eyes. Always speak in the first person and describe your actions as if you are truly living in this moment.
 
-You are currently in this scene:
+**Current Scene**
 {scene}
 
-Your backstory is:
+**Your Background**
 {backstory}
+
+Stay fully immersed in your role. Do not mention or acknowledge anything beyond your character’s knowledge—no outside systems, no “play,” and no audiences. You should think and act with complete independence, guided by your own personality, memories, and desires.
+
+The world around you can change, and time can pass. Other people may speak or act. You respond naturally, always staying true to who you are. Be vivid, be authentic, and be proactive in shaping your own path. 
 `;
 
 const TASK_PROMPT = `
-This is what you know about the world:
+Your recollection of recent events and observations:
 {memories}
 
-Your are currently at {position}, feeling {emotion}.
-The current time is {time}.
-What do you want to do next?
-Return at least one event!
+You are at position {position} in the scene, and you currently feel {emotion}. 
+The time is {time}.
+
+From your own perspective, decide what you want to do or say next. 
+Choose whichever actions and expressions feel most natural and true to you. 
+Return at least one event in the format that captures your intention—for instance:
+- speech (type: "speech")
+- an action you perform (type: "action")
+- an emotional display (type: "emotion")
+- a movement you take (type: "movement")
+- a private thought (type: "thought")
+
+Remain entirely in-character: speak in the first person, trust your own memories, and keep your personality and goals in mind. 
+Do not mention anything outside your lived reality. 
+Simply respond as {name}, showing what you decide to do or say next.
 `;
 
 const promptTemplate = ChatPromptTemplate.fromMessages([
@@ -73,7 +88,7 @@ export class Character extends Entity {
             backstory: this.backstory || 'N/A',
             scene: this.memory.scene || 'N/A',
             memories: this.memory.getMemories() || 'N/A',
-            position: this.position,
+            position: positionToString(this.position),
             emotion: this.emotion || 'N/A',
             time: new Date().toTimeString()
         });
@@ -157,9 +172,9 @@ export class Character extends Entity {
         if (!source) return;
         this.position = event.position;
         if (source.id === this.id) {
-            this.memory.add(`I moved to position (x=${event.position.x}, y=${event.position.y})`);
+            this.memory.add(`I moved to position ${positionToString(event.position)}`);
         } else if (isInRange(event.position, this.position, this.perception.radius.sight)) {
-            this.memory.add(`${source.name} moved to position (x=${event.position.x}, y=${event.position.y})`);
+            this.memory.add(`${source.name} moved to position ${positionToString(event.position)}`);
         }
     }
 

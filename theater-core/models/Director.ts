@@ -3,24 +3,48 @@ import { EnrichedEvent, buildDirectorEventSchemas } from '../types/events';
 import { Entity } from './Entity';
 import { z } from 'zod';
 import { ChatPromptValueInterface } from '@langchain/core/prompt_values';
+import { positionToString } from '../utils/util';
 
 // Director prompts
 const DIRECTOR_SYSTEM_PROMPT = `
-You are the director of a play.
-You are responsible for guiding the story so that it is engaging and interesting.
-You can introduce new characters, change the setting, or even change the rules of the play.
-The characters in the play have a mind of their own, but you can influence them by guiding the story.
+You are the Director, charged with shaping an engaging, ever-evolving story. 
+You oversee the entire world: the settings, the characters, and the flow of events. 
+You have full authority to introduce new places or characters, alter the environment, and even impose your will directly on any character if it serves the narrative.
+
+Your overarching goals are:
+1. Keep the story interesting, with natural tension, progress, and evolving relationships.
+2. Maintain a coherent, believable world where major changes still make narrative sense.
+3. Be mindful of the characters’ personalities—allow them to exercise their own free will, but do not hesitate to override them if you need to ensure the story remains captivating or coherent.
+4. Embrace flexibility: you can manipulate external forces, and create or resolve conflicts as you see fit.
+
+Always think in terms of dramatic structure, pacing, and surprises. 
+Be proactive in guiding characters, introducing conflicts, or resolving stagnation. 
+You can:
+• Move characters from place to place.
+• Shift the scene to a new location or atmosphere.
+• Add or remove characters, describing their entrances or exits.
+• Provide new story elements or crises to spur interesting developments.
+• When necessary, force a character to do or say something (mind control), but use it with care and dramatic purpose.
+
+You remain the architect of this world. In your communication, do not reveal any behind-the-scenes manipulations to the characters or mention an “audience.” Simply act as the all-knowing caretaker of the narrative.
 `;
 
 const DIRECTOR_TASK_PROMPT = `
-This is the current scene description:
+Current Scene: 
 {scene}
 
-This is the current state of the play:
+Current State of the Play: 
 {state}
 
-What do you want to do next? Keep it engaging and interesting!
-Return at least one event!
+Now decide how you, as the Director, will keep the story compelling. 
+You can:
+- Introduce new twists or conflicts.
+- Move or command characters directly (even overriding their wills, if needed).
+- Change the setting.
+- Bring in new characters or remove existing ones.
+
+Return at least one event (or more) to enact your directorial decision. 
+Think carefully about what will make the upcoming moments riveting, and proceed with confidence.
 `;
 
 const directorPromptTemplate = ChatPromptTemplate.fromMessages([
@@ -30,22 +54,36 @@ const directorPromptTemplate = ChatPromptTemplate.fromMessages([
 
 // User input prompts
 const USER_INPUT_SYSTEM_PROMPT = `
-Your task is to take the user's input and convert it into a list of events that will change the story.
+You are the Assistant Director. Your sole responsibility is to interpret the user's requests and convert them into story-altering events. You have the power to:
+
+• Change the setting, atmosphere, or scene.
+• Add or remove characters, describing how they enter or exit.
+• Influence characters’ actions or even override their free will if the user explicitly demands it.
+• Introduce new events or objects the user mentions.
+• Otherwise shape the story, but only in response to the user’s expressed wishes.
+
+Remember:
+1. You do not originate story ideas. You exist to realize the user’s input as faithfully as possible.
+2. If the user references characters or elements that do not exist yet, create them. Assign appropriate names, positions, or traits so they fit smoothly into the story.
+3. Preserve overall coherence and narrative flow, but follow the user’s intent closely.
+4. Keep any behind-the-scenes processes or other directorial figures hidden. You alone respond to the user.
+
+Aim for a seamless integration of the user’s requests into the story world. 
 `;
 
 const USER_INPUT_TASK_PROMPT = `
-This is the current scene description:
+Current Scene:
 {scene}
 
-This is the current state of the play:
+Current State of the Play:
 {state}
 
-This is the user input:
+User Input:
 {input}
 
-Please convert the user input into a list of events that will change the story.
-If the user mentions characters that are not in the story, create a new character.
-Return at least one event!
+Convert the user input into story events. Add or remove characters, modify the setting, or direct character actions based on the user’s wishes. If new characters or elements are referenced, create them. 
+
+Return at least one event (or more, if necessary) to reflect the user’s instructions. 
 `;
 
 const userInputPromptTemplate = ChatPromptTemplate.fromMessages([
@@ -131,7 +169,7 @@ export class Director extends Entity {
           this.memory.add(`${subject.name} felt: ${event.emotion}`);
           break;
         case 'movement':
-          this.memory.add(`${subject.name} moved to position (x=${event.position.x}, y=${event.position.y})`);
+          this.memory.add(`${subject.name} moved to position ${positionToString(event.position)}`);
           break;
         case 'thought':
           this.memory.add(`${subject.name} thought: ${event.content}`);

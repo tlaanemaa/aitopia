@@ -22,3 +22,10 @@ export function isInRange(pos1: Position, pos2: Position, range: number): boolea
 export function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+/**
+ * Position to string
+ */
+export function positionToString(position: Position): string {
+  return `x=${position.x}, y=${position.y}`;
+}
