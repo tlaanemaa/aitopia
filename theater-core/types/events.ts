@@ -8,25 +8,17 @@ import { z } from 'zod';
  * Position in 2D space
  */
 const PositionSchema = z.object({
-  x: z.number().describe('Horizontal position in the scene'),
-  y: z.number().describe('Vertical position in the scene')
+  x: z
+    .number()
+    .describe('Horizontal position in the world. Between 0 and 100, where 0 is the left edge and 100 is the right edge.')
+    .transform(x => Math.min(Math.max(x, 0), 100)),
+  y: z
+    .number()
+    .describe('Vertical position in the world. Between 0 and 100, where 0 is the top edge and 100 is the bottom edge.')
+    .transform(y => Math.min(Math.max(y, 0), 100))
 });
 
 export type Position = z.infer<typeof PositionSchema>;
-
-/**
- * Direction in 2D space
- */
-const DirectionSchema = z.enum([
-  'north',
-  'south',
-  'east',
-  'west',
-  'northeast',
-  'northwest',
-  'southeast',
-  'southwest'
-]).describe('Cardinal and intercardinal directions in the scene');
 
 /**
  * Character traits
@@ -71,8 +63,8 @@ const MovementTypeSchema = z.enum([
 const MovementEventSchema = BaseEventSchema.extend({
   type: z.literal('movement'),
   movementType: MovementTypeSchema.describe('The type of movement being performed'),
-  direction: DirectionSchema.describe('The direction the character is moving')
-}).describe('Event to describe a character movement');
+  destination: PositionSchema.describe('The destination the character is moving to')
+}).describe('Use this to if you want to move');
 
 // ================ Character Actions ================
 /**
@@ -82,7 +74,7 @@ const ActionEventSchema = BaseEventSchema.extend({
   type: z.literal('action'),
   action: z.string()
     .describe('Detailed past tense description of the action being performed, including the direction and target when relevant.')
-}).describe('Event to describe a character action');
+}).describe('Use this if you want to describe an action');
 
 /**
  * Speech event data
@@ -91,7 +83,7 @@ const SpeechEventSchema = BaseEventSchema.extend({
   type: z.literal('speech'),
   content: z.string().describe('The actual words being spoken'),
   targetName: z.string().optional().describe('Name of the character being spoken to')
-}).describe('Event to describe a character speech');
+}).describe('Use this if you want to say something');
 
 /**
  * Emotion event data
@@ -99,7 +91,7 @@ const SpeechEventSchema = BaseEventSchema.extend({
 const EmotionEventSchema = BaseEventSchema.extend({
   type: z.literal('emotion'),
   emotion: z.string().describe('The emotion being expressed (e.g., "happy", "sad", "angry")'),
-}).describe('Event to describe a character emotion');
+}).describe('Use this if you want to express an emotion');
 
 /**
  * Thought event data
@@ -107,7 +99,7 @@ const EmotionEventSchema = BaseEventSchema.extend({
 const ThoughtEventSchema = BaseEventSchema.extend({
   type: z.literal('thought'),
   content: z.string().describe('The thought content')
-}).describe('Event to describe a character thought');
+}).describe('Use this if you want to think');
 
 /**
  * Character event data as a union of all possible event types
@@ -147,7 +139,7 @@ function buildRuntimeCharacterEventSchemas(characterNames: [string, ...string[]]
 const SceneChangeEventSchema = BaseEventSchema.extend({
   type: z.literal('scene_change'),
   newSceneDescription: z.string().describe('Concise description of the new scene')
-}).describe('Event to describe a scene change');
+}).describe("Use this if you want to change the scene, don't do it too often.");
 
 /**
  * Character enter event data
@@ -161,7 +153,7 @@ const CharacterEnterEventSchema = BaseEventSchema.extend({
   emotion: z.string().describe('Emotion of the character entering the scene'),
   backstory: z.string().optional().describe('Backstory of the character entering the scene'),
   description: z.string().optional().describe('Optional description of how the character enters')
-}).describe('Event to describe a character entering the scene');
+}).describe('Use this if you want to add a new character to the world');
 
 export type CharacterEnterEvent = z.infer<typeof CharacterEnterEventSchema>;
 
@@ -172,7 +164,7 @@ const CharacterExitEventSchema = BaseEventSchema.extend({
   type: z.literal('character_exit'),
   characterId: z.string().describe('ID of the character exiting the scene'),
   description: z.string().optional().describe('Optional description of how the character exits')
-}).describe('Event to describe a character exiting the scene');
+}).describe('Use this if you want to remove a character from the world');
 
 /**
  * Generic world event data
@@ -180,7 +172,7 @@ const CharacterExitEventSchema = BaseEventSchema.extend({
 const GenericWorldEventSchema = BaseEventSchema.extend({
   type: z.literal('generic'),
   description: z.string().describe('Description of the world event')
-}).describe('Event to describe a generic world event');
+}).describe('Use this if you want to describe a generic world event');
 
 /**
  * World event data as a union of all possible event types
