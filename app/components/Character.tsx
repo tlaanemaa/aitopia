@@ -12,14 +12,13 @@ import {
 } from "../constants";
 import { CharacterState } from "@/theater-core";
 
-interface CharacterProps extends CharacterState {
+interface CharacterProps {
+  character: CharacterState;
   active: boolean;
   processing: boolean;
 }
 
-export default function Character({
-  character,
-}: Readonly<{ character: CharacterProps }>) {
+export default function Character({ character }: Readonly<CharacterProps>) {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [screenHeight, setScreenHeight] = useState(window.innerHeight);
   const [lastThought, setLastThought] = useState(character.thought);

@@ -5,12 +5,12 @@ import Character from "./Character";
 import SceneBackground from "./SceneBackground";
 
 export default function Stage() {
-  const { 
-    characters, 
-    scene, 
-    activeCharacterId, 
+  const {
+    characters,
+    scene,
+    activeCharacterId,
     processingCharacterId,
-    isProcessingUserInput 
+    isProcessingUserInput,
   } = useTheaterStore();
 
   return (
@@ -20,27 +20,19 @@ export default function Stage() {
 
       {/* Characters */}
       <div className="relative w-full h-full">
-        {characters.map((character) => {
-          // Determine visual state
-          let visualState: 'speaking' | 'thinking' | 'processing' | 'idle' = 'idle';
-          
-          if (character.id === activeCharacterId) {
-            visualState = character.speech ? 'speaking' : 'thinking';
-          } else if (character.id === processingCharacterId && !isProcessingUserInput) {
-            visualState = 'processing';
-          }
-
-          return (
-            <Character 
-              key={character.id} 
-              character={{
-                ...character,
-                visualState
-              }} 
-            />
-          );
-        })}
+        {characters.map((character) => (
+          <Character
+            key={character.id}
+            character={character}
+            active={
+              activeCharacterId === character.id && !isProcessingUserInput
+            }
+            processing={
+              processingCharacterId === character.id && !isProcessingUserInput
+            }
+          />
+        ))}
       </div>
     </div>
   );
-} 
+}
