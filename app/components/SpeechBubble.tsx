@@ -9,7 +9,7 @@ export default function SpeechBubble({ text, speed = 30 }: SpeechBubbleProps) {
   if (!text) return null;
   
   return (
-    <div className="text-white text-ellipsis text-center">
+    <div className="text-white text-ellipsis text-left">
       💬 <TypeWriter text={text} speed={speed} />
     </div>
   );
