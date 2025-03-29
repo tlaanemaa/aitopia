@@ -59,6 +59,7 @@ export class Play {
   }
 
   private handleEvents(): void {
+    // FIXME: Add some cleanup logic here to sanitize the events before they are processed
     // Handle character additions. This is done first to ensure that characters are available during propagation.
     this.currentEvents
       .filter(event => event.type === 'character_enter')

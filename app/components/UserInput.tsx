@@ -5,6 +5,7 @@ import { useTheaterStore } from "../store/theaterStore";
 import { motion } from "framer-motion";
 import { useEllipsis } from "../hooks/useEllipsis";
 import InputQueue from "./InputQueue";
+import { initializeVoices } from "../utils/voice";
 
 export default function UserInput() {
   const { turnCount, setAutoRun, queueInput, isProcessingUserInput } =
@@ -16,7 +17,10 @@ export default function UserInput() {
   const sendInput = useCallback(async () => {
     const trimmedInput = input.trim();
     if (trimmedInput) queueInput(trimmedInput);
-    if (isInitialState) setAutoRun(true);
+    if (isInitialState) {
+      initializeVoices();
+      setAutoRun(true);
+    }
     setInput("");
   }, [input, queueInput, setAutoRun, isInitialState]);
 

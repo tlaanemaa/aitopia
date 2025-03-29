@@ -169,7 +169,7 @@ export class Director extends Entity {
           this.memory.setScene(event.newSceneDescription);
           break;
         case "character_enter":
-          this.memory.add(`${event.name} entered the scene`);
+          this.memory.add(`${event.name} entered the scene at ${positionToString(event.position)}`);
           break;
         case "character_exit":
           const character = this.entityRegistry.getEntity(event.characterId);

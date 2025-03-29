@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useTheaterStore, getTheaterState } from "../store/theaterStore";
 import { useSettingsStore } from "../store/settingsStore";
-import { speak, initializeVoices } from "../utils/voice";
+import { speak } from "../utils/voice";
 import { PlayState } from "@/theater-core";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -121,11 +121,6 @@ export default function PlayRunner() {
   useEffect(() => {
     if (autoRun) CURRENT_TURN_LOOP = CURRENT_TURN_LOOP.finally(runTurnLoop);
   }, [autoRun]);
-
-  // Initialize voices
-  useEffect(() => {
-    initializeVoices();
-  }, []);
 
   return null;
 }
