@@ -1,5 +1,5 @@
 const window = globalThis.window as Window;
-import { hashString } from "@/app/utils/hash";
+import { hashString } from "./hash";
 
 const SUPPORTED_LANGUAGES = [
   "en", // English
@@ -62,7 +62,7 @@ class SpeechManager {
       }
 
       // Set up timeout based on text length
-      const timeoutMs = Math.min(text.length * 100 + 3000, 10000); // Cap at 10 seconds
+      const timeoutMs = Math.min(text.length * 1000 + 3000, 60000); // Cap at 60 seconds
       const timeout = setTimeout(() => {
         console.log("Speech timed out");
         if (this.currentUtterance) {

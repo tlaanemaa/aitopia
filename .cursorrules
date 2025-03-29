@@ -1,0 +1,5 @@
+- This project is built on NextJS 15.1 with Tailwind v3
+- The Tailwind themes are configured in globals.css, according to the spec here https://tailwindcss.com/docs/theme
+- Run `npm run check-types` in the root dir to check your work.
+- Look around the codebase before writing new code to make sure you properly understand what already exists.
+- If anything is unclear, ask. Never speculate.
