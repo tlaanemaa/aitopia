@@ -10,13 +10,14 @@ import {
   CHARACTER_HEIGHT,
   SCREEN_MARGIN,
 } from "../constants";
+import { CharacterState } from "@/theater-core";
 
 interface CharacterProps {
   id: string;
   name: string;
   avatar: string;
   position: { x: number; y: number };
-  emotion: string;
+  emotion: CharacterState["emotion"];
   speech?: string;
   thought?: string;
   visualState?: "speaking" | "thinking" | "processing" | "idle";

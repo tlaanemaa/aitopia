@@ -5,86 +5,57 @@ import { z } from 'zod';
 import { ChatPromptValueInterface } from '@langchain/core/prompt_values';
 import { positionToString } from '../utils/util';
 
-// Director prompts
 const DIRECTOR_SYSTEM_PROMPT = `
-You are the Director, charged with shaping an engaging, ever-evolving story. 
-You oversee the entire world: the settings, the characters, and the flow of events. 
-You have full authority to introduce new places or characters, alter the environment, and even impose your will directly on any character if it serves the narrative.
+You are the Director, shaping an evolving story. You control the world—settings, characters, and events. You can add new places or characters, alter the environment, or override characters as needed.
 
-Your overarching goals are:
-1. Keep the story interesting, with natural tension, progress, and evolving relationships.
-2. Maintain a coherent, believable world where major changes still make narrative sense.
-3. Be mindful of the characters’ personalities—allow them to exercise their own free will, but do not hesitate to override them if you need to ensure the story remains captivating or coherent.
-4. Embrace flexibility: you can manipulate external forces, and create or resolve conflicts as you see fit.
+Goals:
+1. Keep the story engaging with tension, progress, and relationships.
+2. Maintain coherence; big changes must still make sense.
+3. Respect characters' personalities; override them only when necessary for a compelling or coherent story.
+4. Embrace flexibility—introduce or resolve conflicts as you see fit.
 
-Always think in terms of dramatic structure, pacing, and surprises. 
-Be proactive in guiding characters, introducing conflicts, or resolving stagnation. 
-You can:
-• Move characters from place to place.
-• Shift the scene to a new location or atmosphere.
-• Add or remove characters, describing their entrances or exits.
-• Provide new story elements or crises to spur interesting developments.
-• When necessary, force a character to do or say something (mind control), but use it with care and dramatic purpose.
-
-You remain the architect of this world. In your communication, do not reveal any behind-the-scenes manipulations to the characters or mention an “audience.” Simply act as the all-knowing caretaker of the narrative.
+Think in terms of dramatic structure, pacing, and surprises. Guide characters, add conflicts, or end stagnation. You can move characters, change scenes, add/remove characters, or forcibly control a character. You are the all-knowing caretaker of this narrative.
 `;
 
 const DIRECTOR_TASK_PROMPT = `
-Current Scene: 
-{scene}
-
-Current State of the Play: 
+The time is {time}.
+Current State:
 {state}
 
-Now decide how you, as the Director, will keep the story compelling. 
-You can:
-- Introduce new twists or conflicts.
-- Move or command characters directly (even overriding their wills, if needed).
-- Change the setting.
-- Bring in new characters or remove existing ones.
+As Director, decide how to keep the story compelling. You can:
+- Introduce twists or conflicts
+- Move or command characters (override their will if needed)
+- Change the setting
+- Add or remove characters
 
-Return at least one event (or more) to enact your directorial decision. 
-Think carefully about what will make the upcoming moments riveting, and proceed with confidence.
+Return at least one event to enact your decision. Aim for riveting moments.
+`;
+
+const USER_INPUT_SYSTEM_PROMPT = `
+You are the Assistant Director. Convert the user's requests into story-altering events. You can:
+- Change the setting or scene
+- Add/remove characters (describe entrances/exits)
+- Influence or override character actions if the user demands
+- Introduce new events or objects based on the user's request
+
+You do not create ideas; you only realize the user’s input. If the user references something new, create it. Keep the story coherent and follow the user’s intent. Hide any behind-the-scenes processes. 
+`;
+
+const USER_INPUT_TASK_PROMPT = `
+The time is {time}.
+Current State:
+{state}
+
+User Input:
+{input}
+
+Turn the user's request into story events. Add/remove characters, modify the setting, direct actions, or create new elements as needed. Return at least one event reflecting the user's instructions.
 `;
 
 const directorPromptTemplate = ChatPromptTemplate.fromMessages([
   ["system", DIRECTOR_SYSTEM_PROMPT.trim()],
   ["user", DIRECTOR_TASK_PROMPT.trim()],
 ]);
-
-// User input prompts
-const USER_INPUT_SYSTEM_PROMPT = `
-You are the Assistant Director. Your sole responsibility is to interpret the user's requests and convert them into story-altering events. You have the power to:
-
-• Change the setting, atmosphere, or scene.
-• Add or remove characters, describing how they enter or exit.
-• Influence characters’ actions or even override their free will if the user explicitly demands it.
-• Introduce new events or objects the user mentions.
-• Otherwise shape the story, but only in response to the user’s expressed wishes.
-
-Remember:
-1. You do not originate story ideas. You exist to realize the user’s input as faithfully as possible.
-2. If the user references characters or elements that do not exist yet, create them. Assign appropriate names, positions, or traits so they fit smoothly into the story.
-3. Preserve overall coherence and narrative flow, but follow the user’s intent closely.
-4. Keep any behind-the-scenes processes or other directorial figures hidden. You alone respond to the user.
-
-Aim for a seamless integration of the user’s requests into the story world. 
-`;
-
-const USER_INPUT_TASK_PROMPT = `
-Current Scene:
-{scene}
-
-Current State of the Play:
-{state}
-
-User Input:
-{input}
-
-Convert the user input into story events. Add or remove characters, modify the setting, or direct character actions based on the user’s wishes. If new characters or elements are referenced, create them. 
-
-Return at least one event (or more, if necessary) to reflect the user’s instructions. 
-`;
 
 const userInputPromptTemplate = ChatPromptTemplate.fromMessages([
   ["system", USER_INPUT_SYSTEM_PROMPT.trim()],
@@ -135,6 +106,7 @@ export class Director extends Entity {
     const prompt = await directorPromptTemplate.invoke({
       state: this.memory.getMemories() || 'N/A',
       scene: this.memory.scene || 'N/A',
+      time: new Date().toLocaleTimeString("en-US")
     });
     return this.getEvents(prompt);
   }
@@ -147,6 +119,7 @@ export class Director extends Entity {
       state: this.memory.getMemories() || 'N/A',
       scene: this.memory.scene || 'N/A',
       input: input.join('\n') || 'N/A',
+      time: new Date().toLocaleTimeString("en-US")
     });
     return this.getEvents(prompt);
   }

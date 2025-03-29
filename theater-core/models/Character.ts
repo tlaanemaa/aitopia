@@ -1,4 +1,5 @@
 import {
+    Emotion,
     EnrichedCharacterEvent,
     EnrichedEvent,
     Position,
@@ -15,45 +16,27 @@ import { CharacterEventSchema } from '../types/events';
 import { Ai } from './Ai';
 import { AssetRegistry } from '../service/AssetRegistry';
 
-const SYSTEM_PROMPT = `
-You are {name}, a real person with your own history, motivations, and feelings. 
-See the world entirely through your own eyes. Always speak in the first person and describe your actions as if you are truly living in this moment.
+const CHARACTER_SYSTEM_PROMPT = `
+You are {name}, a real person with your own history, motivations, and feelings. See the world through your own eyes. Always speak in the first person and live in the present.
 
-**Current Scene**
-{scene}
-
-**Your Background**
+**Background**
 {backstory}
 
-Stay fully immersed in your role. Do not mention or acknowledge anything beyond your character’s knowledge—no outside systems, no “play,” and no audiences. You should think and act with complete independence, guided by your own personality, memories, and desires.
-
-The world around you can change, and time can pass. Other people may speak or act. You respond naturally, always staying true to who you are. Be vivid, be authentic, and be proactive in shaping your own path. 
+Stay immersed in your role, guided by your personality, memories, and desires.
+The world can change around you; time can pass; others may speak or act. Respond naturally and consistently. Be vivid, genuine, and take initiative.
 `;
 
-const TASK_PROMPT = `
-Your recollection of recent events and observations:
+const CHARACTER_TASK_PROMPT = `
+Recent events and observations:
 {memories}
 
-You are at position {position} in the scene, and you currently feel {emotion}. 
-The time is {time}.
-
-From your own perspective, decide what you want to do or say next. 
-Choose whichever actions and expressions feel most natural and true to you. 
-Return at least one event in the format that captures your intention—for instance:
-- speech (type: "speech")
-- an action you perform (type: "action")
-- an emotional display (type: "emotion")
-- a movement you take (type: "movement")
-- a private thought (type: "thought")
-
-Remain entirely in-character: speak in the first person, trust your own memories, and keep your personality and goals in mind. 
-Do not mention anything outside your lived reality. 
-Simply respond as {name}, showing what you decide to do or say next.
+You are at {position} and feel {emotion}. The time is {time}.
+From your perspective, decide your next move or words. Choose any event type that feels right.
 `;
 
 const promptTemplate = ChatPromptTemplate.fromMessages([
-    ["system", SYSTEM_PROMPT.trim()],
-    ["user", TASK_PROMPT.trim()],
+    ["system", CHARACTER_SYSTEM_PROMPT.trim()],
+    ["user", CHARACTER_TASK_PROMPT.trim()],
 ]);
 
 const responseFormat = z.array(CharacterEventSchema).describe('Array of events describing what you want to do next');
@@ -72,7 +55,7 @@ export class Character extends Entity {
         public avatar: string,
         public position: Position = { x: 50, y: 50 },
         public traits: Trait[] = [],
-        public emotion: string = 'neutral',
+        public emotion: Emotion = 'neutral',
         public backstory?: string,
     ) {
         super(ai, entityRegistry, assetRegistry);
@@ -90,7 +73,7 @@ export class Character extends Entity {
             memories: this.memory.getMemories() || 'N/A',
             position: positionToString(this.position),
             emotion: this.emotion || 'N/A',
-            time: new Date().toTimeString()
+            time: new Date().toLocaleTimeString("en-US")
         });
         const response = await this.ai.call(prompt, responseFormat);
         const enrichedEvents = response.map(event => ({

@@ -1,5 +1,7 @@
+import { CharacterState } from "@/theater-core";
+
 interface CharacterEmotionProps {
-  emotion: string;
+  emotion: CharacterState["emotion"];
 }
 
 export default function CharacterEmotion({ emotion }: CharacterEmotionProps) {
@@ -9,7 +11,6 @@ export default function CharacterEmotion({ emotion }: CharacterEmotionProps) {
       {emotion === 'sad' && '😢'}
       {emotion === 'angry' && '😠'}
       {emotion === 'neutral' && '😐'}
-      {/* Add more emotions as needed */}
     </div>
   );
 } 

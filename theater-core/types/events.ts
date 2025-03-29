@@ -21,6 +21,12 @@ const PositionSchema = z.object({
 export type Position = z.infer<typeof PositionSchema>;
 
 /**
+ * Emotions
+ */
+const EmotionSchema = z.enum(['neutral', 'happy', 'sad', 'angry']).describe('The emotion being expressed');
+export type Emotion = z.infer<typeof EmotionSchema>;
+
+/**
  * Character traits
  */
 const TraitSchema = z.enum([
@@ -50,19 +56,12 @@ const BaseEventSchema = z.object({
 /**
  * Types of movement a character can perform
  */
-const MovementTypeSchema = z.enum([
-  'walk',      // Normal walking speed
-  'run',       // Fast movement
-  'jump',      // Jump to a position
-  'dash',      // Quick burst of speed
-]).describe('Different types of movement a character can perform');
 
 /**
  * Movement event data
  */
 const MovementEventSchema = BaseEventSchema.extend({
   type: z.literal('movement'),
-  movementType: MovementTypeSchema.describe('The type of movement being performed'),
   destination: PositionSchema.describe('The destination the character is moving to')
 }).describe('Use this to if you want to move');
 
@@ -90,7 +89,7 @@ const SpeechEventSchema = BaseEventSchema.extend({
  */
 const EmotionEventSchema = BaseEventSchema.extend({
   type: z.literal('emotion'),
-  emotion: z.string().describe('The emotion being expressed (e.g., "happy", "sad", "angry")'),
+  emotion: EmotionSchema.describe('The emotion being expressed'),
 }).describe('Use this if you want to express an emotion');
 
 /**
@@ -150,7 +149,7 @@ const CharacterEnterEventSchema = BaseEventSchema.extend({
   avatar: z.string().describe('Avatar of the character entering the scene'),
   position: PositionSchema.describe('Position where the character enters'),
   traits: TraitSchema.array().describe('Traits of the character entering the scene'),
-  emotion: z.string().describe('Emotion of the character entering the scene'),
+  emotion: EmotionSchema.describe('Emotion of the character entering the scene'),
   backstory: z.string().optional().describe('Backstory of the character entering the scene'),
   description: z.string().optional().describe('Optional description of how the character enters')
 }).describe('Use this if you want to add a new character to the world');
@@ -192,7 +191,7 @@ function buildRuntimeWorldEventSchema(avatars: [string, ...string[]]) {
   return z.union([
     // SceneChangeEventSchema, // The AI is abusing this
     CharacterEnterEventSchema.extend({ avatar: z.enum(avatars).describe('Avatar of the character entering the scene') }),
-    CharacterExitEventSchema,
+    // CharacterExitEventSchema, // The AI is abusing this
     GenericWorldEventSchema
   ])
 }
