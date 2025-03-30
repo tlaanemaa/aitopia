@@ -1,5 +1,5 @@
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { EnrichedEvent, buildDirectorEventSchemas } from "../types/events";
+import { EnrichedEvent, buildDirectorEventSchemas } from "../events/types";
 import { Entity } from "./Entity";
 import { z } from "zod";
 import { ChatPromptValueInterface } from "@langchain/core/prompt_values";

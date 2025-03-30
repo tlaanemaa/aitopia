@@ -12,8 +12,9 @@ This module implements a domain model for an interactive theatrical storytelling
   - `Perception`: Handles how characters perceive the world based on proximity and traits
   - `Ai`: Abstraction layer for LLM integration (currently using Ollama)
 
-- **types/** - TypeScript type definitions:
-  - `events.ts`: Comprehensive event system for all interactions (character actions, speech, emotions, world events)
+- **events/** - Event definitions:
+  - `types.ts`: Comprehensive event system for all interactions (character actions, speech, emotions, world events)
+  - `sanitation.ts`: Event sanitation logic
 
 - **service/** - Service layer:
   - `EntityRegistry`: Manages all entities in the world

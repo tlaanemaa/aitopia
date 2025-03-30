@@ -5,14 +5,14 @@ import {
     Position,
     Trait,
     WorldEvent
-} from '../types/events';
+} from '../events/types';
 import { isInRange, positionToString } from '../utils/util';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { Perception } from './Perception';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { Entity } from './Entity';
 import { z } from 'zod';
-import { CharacterEventSchema } from '../types/events';
+import { CharacterEventSchema } from '../events/types';
 import { Ai } from './Ai';
 import { AssetRegistry } from '../service/AssetRegistry';
 

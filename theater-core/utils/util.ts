@@ -1,4 +1,4 @@
-import { Position } from '../types/events';
+import { Position } from '../events/types';
 
 /**
  * Calculate the Euclidean distance between two positions

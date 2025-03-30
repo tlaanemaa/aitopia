@@ -1,11 +1,11 @@
 import { Director } from './Director';
 import { Character } from './Character';
-import { EnrichedEvent, CharacterEnterEvent } from '../types/events';
+import { EnrichedEvent, CharacterEnterEvent } from '../events/types';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { Entity } from './Entity';
 import { AssetRegistry } from '../service/AssetRegistry';
 import { Ai, AiConfig } from './Ai';
-
+import { sanitizeEvents } from '../events/sanitation';
 /**
  * Main class representing a theatrical play
  */
@@ -59,7 +59,9 @@ export class Play {
   }
 
   private handleEvents(): void {
-    // FIXME: Add some cleanup logic here to sanitize the events before they are processed
+    // Sanitize events to ensure they are valid
+    this.currentEvents = sanitizeEvents(this.currentEvents);
+
     // Handle character additions. This is done first to ensure that characters are available during propagation.
     this.currentEvents
       .filter(event => event.type === 'character_enter')
