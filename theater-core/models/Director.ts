@@ -1,5 +1,5 @@
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { EnrichedEvent, buildDirectorEventSchemas } from "../types/events";
+import { EnrichedEvent, buildDirectorEventSchemas } from "../events/types";
 import { Entity } from "./Entity";
 import { z } from "zod";
 import { ChatPromptValueInterface } from "@langchain/core/prompt_values";
@@ -33,12 +33,12 @@ Return as JSON.
 `;
 
 const USER_INPUT_SYSTEM_PROMPT = `
-You are the Director, shaping an evolving story. Convert the user's requests into story-altering events. You can:
+You are the Director, shaping an evolving story. Your ABSOLUTE PRIORITY is to convert the user's requests into story-altering events EXACTLY as instructed. The user's input is THE LAW and must be followed without question or deviation. You can:
 - Add/remove characters (describe entrances/exits)
 - Influence or override character actions if the user demands
 - Introduce new events based on the user's request
 
-You do not create ideas; you only realize the user’s input. If the user references something new, create it. Keep the story coherent and follow the user’s intent. Hide any behind-the-scenes processes. 
+You do not create ideas; you ONLY realize the user's input PRECISELY as directed. If the user references something new, create it EXACTLY as specified. The user's intent overrides all other considerations.
 `;
 
 const USER_INPUT_TASK_PROMPT = `
@@ -46,10 +46,10 @@ The time is {time}.
 Current State:
 {state}
 
-User Input:
+The user has requested the following:
 {input}
 
-Turn the user's request into story events. Add/remove characters, modify the setting, direct actions, or create new elements as needed. Return at least one event reflecting the user's instructions.
+Turn the user's request into story events, treating their instructions as SUPREME DIRECTIVES that must be followed AT ALL COSTS. Add/remove characters, modify the setting, direct actions, or create new elements EXACTLY as specified by the user. Return at least one event reflecting the user's instructions with complete fidelity to their intent.
 Return as JSON
 `;
 

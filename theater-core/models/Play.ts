@@ -1,10 +1,11 @@
 import { Director } from './Director';
 import { Character } from './Character';
-import { EnrichedEvent, CharacterEnterEvent } from '../types/events';
+import { EnrichedEvent, CharacterEnterEvent } from '../events/types';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { Entity } from './Entity';
 import { AssetRegistry } from '../service/AssetRegistry';
 import { Ai, AiConfig } from './Ai';
+import { EventSanitizer } from '../events/EventSanitizer';
 
 /**
  * Main class representing a theatrical play
@@ -16,6 +17,7 @@ export class Play {
   public currentTurnIndex: number = 0;
   private readonly entityRegistry = new EntityRegistry();
   private readonly assetRegistry = new AssetRegistry();
+  private readonly eventSanitizer = new EventSanitizer(this.entityRegistry);
   private currentEvents: EnrichedEvent[] = [];
   private currentScene: string = '';
   private isProcessing: boolean = false;
@@ -59,7 +61,9 @@ export class Play {
   }
 
   private handleEvents(): void {
-    // FIXME: Add some cleanup logic here to sanitize the events before they are processed
+    // Sanitize events to ensure they are valid
+    this.currentEvents = this.eventSanitizer.sanitize(this.currentEvents);
+
     // Handle character additions. This is done first to ensure that characters are available during propagation.
     this.currentEvents
       .filter(event => event.type === 'character_enter')
@@ -127,6 +131,7 @@ export class Play {
   public getState() {
     const speechEvents = this.currentEvents.filter(e => e.type === 'speech');
     const thoughtEvents = this.currentEvents.filter(e => e.type === 'thought');
+
     const characters = this.entityRegistry.getCharacters().map(c => ({
       id: c.id,
       name: c.name,
@@ -134,8 +139,10 @@ export class Play {
       position: c.position,
       active: c.id === this.currentTurnEntity.id,
       emotion: c.emotion,
-      speech: speechEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
-      thought: thoughtEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
+      lastThought: c.lastThought,
+      lastSpeech: c.lastSpeech,
+      currentSpeech: speechEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
+      currentThought: thoughtEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
     }));
     const turnOrder = this.turnOrder.map(e => ({
       id: e.id,

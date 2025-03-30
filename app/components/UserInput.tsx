@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useEllipsis } from "../hooks/useEllipsis";
 import InputQueue from "./InputQueue";
 import { initializeVoices } from "../utils/voice";
+import clsx from "clsx";
 
 export default function UserInput() {
   const { turnCount, setAutoRun, queueInput, isProcessingUserInput } =
@@ -37,7 +38,7 @@ export default function UserInput() {
 
       {/* Input Field */}
       <motion.div
-        className="flex items-stretch p-2 w-full max-w-2xl bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-lg shadow-black/20 overflow-hidden"
+        className="flex items-stretch p-2 w-full max-w-2xl bg-black/40 backdrop-blur-xl rounded-full border-2 border-white/10 shadow-lg shadow-black/20 overflow-hidden"
         initial={isInitialState ? { y: 20, opacity: 0 } : false}
         animate={isInitialState ? { y: 0, opacity: 1 } : false}
         transition={{ duration: 1, delay: 2, ease: [0.16, 1, 0.3, 1] }}
@@ -71,9 +72,13 @@ export default function UserInput() {
               : "Type your instructions..."
           }
           value={input}
+          disabled={isProcessingUserInput}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-grow h-11 px-5 rounded-full text-base focus:outline-none bg-transparent text-white placeholder-white/40 min-w-1 tracking-wide transition-colors duration-200 focus:placeholder-white/60"
+          className={clsx(
+            "flex-grow h-11 px-5 rounded-full text-base disabled:cursor-not-allowed focus:outline-none bg-transparent text-white placeholder-white/40 min-w-1 tracking-wide transition-colors duration-200 focus:placeholder-white/60",
+            isProcessingUserInput && "placeholder-white/80"
+          )}
         />
         <motion.button
           onClick={sendInput}

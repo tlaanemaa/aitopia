@@ -5,14 +5,14 @@ import {
     Position,
     Trait,
     WorldEvent
-} from '../types/events';
+} from '../events/types';
 import { isInRange, positionToString } from '../utils/util';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { Perception } from './Perception';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { Entity } from './Entity';
 import { z } from 'zod';
-import { CharacterEventSchema } from '../types/events';
+import { CharacterEventSchema } from '../events/types';
 import { Ai } from './Ai';
 import { AssetRegistry } from '../service/AssetRegistry';
 
@@ -47,6 +47,8 @@ const responseFormat = z.array(CharacterEventSchema).describe('Array of events d
  */
 export class Character extends Entity {
     private perception: Perception;
+    public lastThought: string = '';
+    public lastSpeech: string = '';
 
     constructor(
         ai: Ai,
@@ -134,6 +136,7 @@ export class Character extends Entity {
         const source = this.entityRegistry.getEntity(event.sourceId)
         if (!source) return;
         if (source.id === this.id) {
+            this.lastSpeech = event.content;
             this.memory.add(`I said: "${event.content}" ${event.targetName ? `to ${event.targetName}` : ''}`);
         } else if (isInRange(event.position, this.position, this.perception.radius.hearing)) {
             this.memory.add(`${source.name} said: "${event.content}" ${event.targetName ? `to ${event.targetName}` : ''}`);
@@ -154,11 +157,11 @@ export class Character extends Entity {
     private handleMovement(event: Extract<EnrichedCharacterEvent, { type: 'movement' }>): void {
         const source = this.entityRegistry.getEntity(event.sourceId)
         if (!source) return;
-        this.position = event.position;
         if (source.id === this.id) {
-            this.memory.add(`I moved to position ${positionToString(event.position)}`);
+            this.position = event.destination;
+            this.memory.add(`I moved to position ${positionToString(event.destination)}`);
         } else if (isInRange(event.position, this.position, this.perception.radius.sight)) {
-            this.memory.add(`${source.name} moved to position ${positionToString(event.position)}`);
+            this.memory.add(`${source.name} moved to position ${positionToString(event.destination)}`);
         }
     }
 
@@ -166,6 +169,7 @@ export class Character extends Entity {
         const source = this.entityRegistry.getEntity(event.sourceId)
         if (!source) return;
         if (source.id === this.id) {
+            this.lastThought = event.content;
             this.memory.add(`I thought: "${event.content}"`);
         }
     }

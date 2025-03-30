@@ -1,4 +1,4 @@
-import { Trait } from '../types/events';
+import { Trait } from '../events/types';
 
 export interface PerceptionRadius {
     sight: number;
