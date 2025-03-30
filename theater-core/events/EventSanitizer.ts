@@ -1,6 +1,8 @@
 import { EntityRegistry } from "../service/EntityRegistry";
 import { EnrichedEvent, Position } from "./types";
 
+const round = (value: number, places: number = 2) => Math.round(value * 10 ** places) / 10 ** places;
+
 export class EventSanitizer {
     private readonly COLLISION_RADIUS = 10;
 
@@ -69,9 +71,13 @@ export class EventSanitizer {
         ];
 
         // Define collision radius (in 0-100 coordinate space) and max attempts
-        const MAX_ATTEMPTS = 10;
+        const MAX_ATTEMPTS = 50;
         for (let attempts = 0; attempts < MAX_ATTEMPTS; attempts++) {
             let hasCollision = false;
+
+            // Jiggle the position a bit
+            newPosition.x += Math.random() * 0.2 - 0.1;
+            newPosition.y += Math.random() * 0.2 - 0.1;
 
             // Find screen boundaries to avoid collisions with
             const screenBoundaries = [
@@ -119,6 +125,8 @@ export class EventSanitizer {
             if (!hasCollision) break;
         }
 
+        newPosition.x = Math.max(0, Math.min(round(newPosition.x, 2), 100));
+        newPosition.y = Math.max(0, Math.min(round(newPosition.y, 2), 100));
         return newPosition;
     }
 }
