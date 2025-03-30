@@ -11,7 +11,7 @@ export async function callGemini(model: string, messages: Messages[], responseJs
     const prompt = await ChatPromptTemplate.fromMessages(messages).invoke({});
     const llm = new ChatGoogleGenerativeAI({
         apiKey: process.env.GEMINI_API_KEY,
-        model,
+        model: "gemini-2.0-flash-lite", // TODO: Hardcoded to avoid someone using an expensive model
         temperature: 1,
     }).withStructuredOutput(responseJsonSchema);
 
