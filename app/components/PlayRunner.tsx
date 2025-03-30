@@ -32,8 +32,8 @@ async function processCharacterTurn() {
   console.log("Processing character turn");
   const store = getTheaterState();
   if (!store.play) throw new Error("Play not found");
-  store.setProcessingCharacter(store.play.currentTurnEntity.id);
   store.play.nextTurn();
+  store.setProcessingCharacter(store.play.currentTurnEntity.id);
   await store.play.processTurn();
   store.setProcessingCharacter(null);
   return store.play.getState();
@@ -57,13 +57,19 @@ async function processNextTurn(): Promise<PlayState> {
  * Read out speeches in order
  */
 async function readSpeeches(state: PlayState) {
-  const { setActiveCharacter } = getTheaterState();
+  const { setActiveCharacter, addError } = getTheaterState();
   const speakers = state.characters.filter((c) => c.speech);
 
   for (const speaker of speakers) {
-    setActiveCharacter(speaker.id);
-    await speak(speaker.name, speaker.speech);
-    setActiveCharacter(null);
+    try {
+      setActiveCharacter(speaker.id);
+      await speak(speaker.name, speaker.speech);
+    } catch (error) {
+      console.error(error);
+      addError(error as Error);
+    } finally {
+      setActiveCharacter(null);
+    }
   }
 }
 
