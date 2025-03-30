@@ -12,6 +12,19 @@ export class EventSanitizer {
      * Sanitizes a list of events.
      */
     public sanitize(events: EnrichedEvent[]): EnrichedEvent[] {
+        // Deduplicate character_enter events by name, keeping only the first occurrence
+        const seenCharacterNames = new Set<string>();
+        events = events.filter(event => {
+            if (event.type === 'character_enter') {
+                if (seenCharacterNames.has(event.name)) {
+                    return false;
+                }
+                seenCharacterNames.add(event.name);
+            }
+            return true;
+        });
+
+        // Sanitize each event
         return events.map(event => {
             const otherEvents = events.filter(e => e !== event);
             const otherEventPositions = [
@@ -76,8 +89,8 @@ export class EventSanitizer {
             let hasCollision = false;
 
             // Jiggle the position a bit
-            newPosition.x += Math.random() * 0.2 - 0.1;
-            newPosition.y += Math.random() * 0.2 - 0.1;
+            newPosition.x += Math.random() * 2 - 1;
+            newPosition.y += Math.random() * 2 - 1;
 
             // Find screen boundaries to avoid collisions with
             const screenBoundaries = [

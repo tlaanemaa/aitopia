@@ -1,15 +1,9 @@
 import Image from "next/image";
-import { useEffect, useState } from "react";
 import CharacterEmotion from "./CharacterEmotion";
 import SpeechBubble from "./SpeechBubble";
 import ThoughtBubble from "./ThoughtBubble";
 import clsx from "clsx";
-import {
-  getAvatarUrl,
-  CHARACTER_WIDTH,
-  CHARACTER_HEIGHT,
-  SCREEN_MARGIN,
-} from "../constants";
+import { getAvatarUrl } from "../constants";
 import { CharacterState } from "@/theater-core";
 
 interface CharacterProps {
@@ -23,28 +17,6 @@ export default function Character({
   processing,
   active,
 }: Readonly<CharacterProps>) {
-  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
-  const [screenHeight, setScreenHeight] = useState(window.innerHeight);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setScreenWidth(window.innerWidth);
-      setScreenHeight(window.innerHeight);
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const offsetX =
-    (character.position.x / 100) * (screenWidth - 2 * SCREEN_MARGIN) +
-    SCREEN_MARGIN -
-    CHARACTER_WIDTH / 2;
-  const offsetY =
-    (character.position.y / 100) * (screenHeight - 2 * SCREEN_MARGIN) +
-    SCREEN_MARGIN -
-    CHARACTER_HEIGHT / 2;
-
   // If processing, show a thinking message
   const displayThought = processing
     ? "Hmm... now what?"
@@ -53,11 +25,13 @@ export default function Character({
   return (
     <div
       className={clsx(
-        "fixed top-0 left-0 transition-transform duration-[2000ms]",
+        "absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 h-14 w-14",
         character.active && "z-10"
       )}
       style={{
-        transform: `translate(${offsetX}px, ${offsetY}px)`,
+        left: `${character.position.x}%`,
+        top: `${character.position.y}%`,
+        transition: "left ease-in-out 2000ms, top ease-in-out 2000ms",
       }}
     >
       <div className="relative flex flex-col items-center transition-all duration-300">
@@ -65,8 +39,8 @@ export default function Character({
           <Image
             src={getAvatarUrl(character.avatar)}
             alt={character.name}
-            width={CHARACTER_WIDTH}
-            height={CHARACTER_HEIGHT}
+            width={60}
+            height={60}
             className="transition-all duration-300"
           />
           <CharacterEmotion emotion={character.emotion} />

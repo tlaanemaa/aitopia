@@ -19,7 +19,7 @@ export default function Stage() {
       <SceneBackground description={scene} />
 
       {/* Characters */}
-      <div className="relative w-full h-full">
+      <div className="absolute top-32 left-32 right-32 bottom-40">
         {characters.map((character) => (
           <Character
             key={character.id}
