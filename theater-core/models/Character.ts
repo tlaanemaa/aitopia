@@ -154,11 +154,11 @@ export class Character extends Entity {
     private handleMovement(event: Extract<EnrichedCharacterEvent, { type: 'movement' }>): void {
         const source = this.entityRegistry.getEntity(event.sourceId)
         if (!source) return;
-        this.position = event.position;
         if (source.id === this.id) {
-            this.memory.add(`I moved to position ${positionToString(event.position)}`);
+            this.position = event.destination;
+            this.memory.add(`I moved to position ${positionToString(event.destination)}`);
         } else if (isInRange(event.position, this.position, this.perception.radius.sight)) {
-            this.memory.add(`${source.name} moved to position ${positionToString(event.position)}`);
+            this.memory.add(`${source.name} moved to position ${positionToString(event.destination)}`);
         }
     }
 

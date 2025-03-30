@@ -5,7 +5,8 @@ import { EntityRegistry } from '../service/EntityRegistry';
 import { Entity } from './Entity';
 import { AssetRegistry } from '../service/AssetRegistry';
 import { Ai, AiConfig } from './Ai';
-import { sanitizeEvents } from '../events/sanitation';
+import { EventSanitizer } from '../events/EventSanitizer';
+
 /**
  * Main class representing a theatrical play
  */
@@ -16,6 +17,7 @@ export class Play {
   public currentTurnIndex: number = 0;
   private readonly entityRegistry = new EntityRegistry();
   private readonly assetRegistry = new AssetRegistry();
+  private readonly eventSanitizer = new EventSanitizer(this.entityRegistry);
   private currentEvents: EnrichedEvent[] = [];
   private currentScene: string = '';
   private isProcessing: boolean = false;
@@ -60,7 +62,7 @@ export class Play {
 
   private handleEvents(): void {
     // Sanitize events to ensure they are valid
-    this.currentEvents = sanitizeEvents(this.currentEvents);
+    this.currentEvents = this.eventSanitizer.sanitize(this.currentEvents);
 
     // Handle character additions. This is done first to ensure that characters are available during propagation.
     this.currentEvents

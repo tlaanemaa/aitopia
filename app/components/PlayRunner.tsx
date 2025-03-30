@@ -18,9 +18,9 @@ async function processUserInput() {
   const store = getTheaterState();
   if (!store.play) throw new Error("Play not found");
   const userInput = store.inputQueue;
-  store.clearInputQueue();
   store.setProcessingUserInput(true);
   await store.play.processTurn(userInput);
+  store.clearInputQueue();
   store.setProcessingUserInput(false);
   return store.play.getState();
 }

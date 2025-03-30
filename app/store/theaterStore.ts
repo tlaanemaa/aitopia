@@ -76,10 +76,7 @@ export const useTheaterStore = create<TheaterStore>()(
 
         setActiveCharacter: (id) => set({ activeCharacterId: id }),
 
-        setProcessingCharacter: (id) => set((state) => ({
-            processingCharacterId: id,
-            ...(!state.activeCharacterId ? { activeCharacterId: id } : {})
-        })),
+        setProcessingCharacter: (id) => set({ processingCharacterId: id }),
 
         queueInput: (input) => set((state) => ({
             inputQueue: [...state.inputQueue, input]
