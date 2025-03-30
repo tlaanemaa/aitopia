@@ -31,6 +31,7 @@ Recent events and observations:
 {memories}
 
 You are at {position} and feel {emotion}. The time is {time}.
+{nudges}
 From your perspective, decide your next move or words. Choose any event type that feels right.
 Return as JSON.
 `;
@@ -47,6 +48,8 @@ const responseFormat = z.array(CharacterEventSchema).describe('Array of events d
  */
 export class Character extends Entity {
     private perception: Perception;
+    private turnsSinceMovement: number = 0;
+    private turnsSinceSpeech: number = 0;
     public lastThought: string = '';
     public lastSpeech: string = '';
 
@@ -76,7 +79,8 @@ export class Character extends Entity {
             memories: this.memory.getMemories() || 'N/A',
             position: positionToString(this.position),
             emotion: this.emotion || 'N/A',
-            time: new Date().toLocaleTimeString("en-US")
+            time: new Date().toLocaleTimeString("en-US"),
+            nudges: this.getNudges()
         });
         const response = await this.ai.call(prompt, responseFormat);
         const enrichedEvents = response.map(event => ({
@@ -84,7 +88,27 @@ export class Character extends Entity {
             sourceId: this.id,
             position: this.position
         }));
+
+        const containsMovement = enrichedEvents.some(event => event.type === 'movement');
+        this.turnsSinceMovement = containsMovement ? 0 : this.turnsSinceMovement + 1;
+        const containsSpeech = enrichedEvents.some(event => event.type === 'speech');
+        this.turnsSinceSpeech = containsSpeech ? 0 : this.turnsSinceSpeech + 1;
+
         return enrichedEvents;
+    }
+
+    /**
+     * Get nudges for the character
+     */
+    private getNudges(): string {
+        const nudges = [];
+        if (this.turnsSinceMovement > 2) {
+            nudges.push(`You feel an irresistible urge to move away from ${positionToString(this.position)}!`);
+        }
+        if (this.turnsSinceSpeech > 2) {
+            nudges.push(`You feel an irresistible urge to speak!`);
+        }
+        return nudges.join('\n').trim();
     }
 
     /**

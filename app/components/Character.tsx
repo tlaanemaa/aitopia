@@ -21,6 +21,7 @@ interface CharacterProps {
 export default function Character({
   character,
   processing,
+  active,
 }: Readonly<CharacterProps>) {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [screenHeight, setScreenHeight] = useState(window.innerHeight);
@@ -78,7 +79,7 @@ export default function Character({
             {displayThought && (
               <ThoughtBubble text={displayThought} speed={30} />
             )}
-            {character.currentSpeech && (
+            {active && character.currentSpeech && (
               <SpeechBubble text={character.currentSpeech} speed={30} />
             )}
           </div>
