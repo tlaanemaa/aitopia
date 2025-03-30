@@ -4,9 +4,8 @@ import { useEffect } from "react";
 import { useTheaterStore, getTheaterState } from "../store/theaterStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { speak } from "../utils/voice";
-import { PlayState } from "@/theater-core";
+import { EnrichedEvent } from "@/theater-core";
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const MIN_TURN_TIME = 2000;
 let CURRENT_TURN_LOOP: Promise<void> = Promise.resolve();
 
@@ -17,12 +16,11 @@ async function processUserInput() {
   console.log("Processing user input");
   const store = getTheaterState();
   if (!store.play) throw new Error("Play not found");
-  const userInput = store.inputQueue;
   store.setProcessingUserInput(true);
-  await store.play.processTurn(userInput);
+  const newEvents = await store.play.processTurn(store.inputQueue);
   store.clearInputQueue();
   store.setProcessingUserInput(false);
-  return store.play.getState();
+  return newEvents;
 }
 
 /**
@@ -34,36 +32,36 @@ async function processCharacterTurn() {
   if (!store.play) throw new Error("Play not found");
   store.play.nextTurn();
   store.setProcessingCharacter(store.play.currentTurnEntity.id);
-  await store.play.processTurn();
+  const newEvents = await store.play.processTurn();
   store.setProcessingCharacter(null);
-  return store.play.getState();
+  return newEvents;
 }
 
 /**
  * Process the next turn
  */
-async function processNextTurn(): Promise<PlayState> {
+async function processNextTurn() {
   console.log("Processing next turn");
   const { inputQueue } = getTheaterState();
-  const newState =
+  const newEvents =
     inputQueue.length > 0
       ? await processUserInput()
       : await processCharacterTurn();
 
-  return newState;
+  return newEvents;
 }
 
 /**
  * Read out speeches in order
  */
-async function readSpeeches(state: PlayState) {
+async function readSpeeches(events: EnrichedEvent[]) {
   const { setActiveCharacter, addError } = getTheaterState();
-  const speakers = state.characters.filter((c) => c.speech);
+  const speakers = events.filter((e) => e.type === "speech");
 
   for (const speaker of speakers) {
     try {
-      setActiveCharacter(speaker.id);
-      await speak(speaker.name, speaker.speech);
+      setActiveCharacter(speaker.sourceId);
+      await speak(speaker.sourceId, speaker.content);
     } catch (error) {
       console.error(error);
       addError(error as Error);
@@ -86,18 +84,23 @@ async function runTurnLoop() {
     const turnStartTime = Date.now();
     try {
       incrementTurn();
-      const [nextState] = await Promise.all([
+      const [newEvents] = await Promise.all([
         processNextTurn(),
         currentSpeeches,
       ]);
 
       syncPlayState();
-      currentSpeeches = readSpeeches(nextState);
+      currentSpeeches = readSpeeches(newEvents);
     } catch (error) {
       console.error(error);
       addError(error as Error);
     } finally {
-      await wait(Math.max(0, MIN_TURN_TIME - (Date.now() - turnStartTime)));
+      await new Promise((resolve) =>
+        setTimeout(
+          resolve,
+          Math.max(0, MIN_TURN_TIME - (Date.now() - turnStartTime))
+        )
+      );
     }
   }
 }

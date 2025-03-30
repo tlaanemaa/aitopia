@@ -2,8 +2,7 @@ import { EntityRegistry } from "../service/EntityRegistry";
 import { EnrichedEvent, Position } from "./types";
 
 export class EventSanitizer {
-    private readonly MAX_TEXT_LENGTH = 200;
-    private readonly COLLISION_RADIUS = 5;
+    private readonly COLLISION_RADIUS = 10;
 
     constructor(private entityRegistry: EntityRegistry) { }
 
@@ -20,22 +19,23 @@ export class EventSanitizer {
 
             switch (event.type) {
                 case 'character_enter':
+                    event.name = this.sanitizeText(event.name, 20);
                     event.position = this.sanitizePosition(event.position, otherEventPositions);
                     break;
                 case 'movement':
                     event.destination = this.sanitizePosition(event.destination, otherEventPositions, event.sourceId);
                     break;
                 case 'action':
-                    event.action = this.sanitizeText(event.action);
+                    event.action = this.sanitizeText(event.action, 200);
                     break;
                 case 'thought':
-                    event.content = this.sanitizeText(event.content);
+                    event.content = this.sanitizeText(event.content, 200);
                     break;
                 case 'generic':
-                    event.description = this.sanitizeText(event.description);
+                    event.description = this.sanitizeText(event.description, 200);
                     break;
                 case 'scene_change':
-                    event.newSceneDescription = this.sanitizeText(event.newSceneDescription);
+                    event.newSceneDescription = this.sanitizeText(event.newSceneDescription, 200);
                     break;
             }
             return event;
@@ -45,9 +45,9 @@ export class EventSanitizer {
     /**
      * Sanitizes the text of an event to ensure it is not too long.
      */
-    private sanitizeText(text: string): string {
-        return text.length > this.MAX_TEXT_LENGTH
-            ? text.slice(0, this.MAX_TEXT_LENGTH) + '...'
+    private sanitizeText(text: string, maxLength: number): string {
+        return text.length > maxLength
+            ? text.slice(0, maxLength) + '...'
             : text;
     }
 
