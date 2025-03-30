@@ -6,6 +6,19 @@ import clsx from "clsx";
 import { getAvatarUrl } from "../constants";
 import { CharacterState } from "@/theater-core";
 
+const thinkingMessages = [
+  "Hmm... what to do next?",
+  "Umm... let me think",
+  "Hmm... my next move",
+  "Let's see...",
+  "Hmm... interesting choice",
+  "Umm... maybe this way",
+  "Hmm... or perhaps that",
+  "Let me consider...",
+  "Hmm... what's best?",
+  "Umm... decisions decisions",
+];
+
 interface CharacterProps {
   character: CharacterState;
   active: boolean;
@@ -17,9 +30,9 @@ export default function Character({
   processing,
   active,
 }: Readonly<CharacterProps>) {
-  // If processing, show a thinking message
+  // If processing, show a random thinking message
   const displayThought = processing
-    ? "Hmm... now what?"
+    ? thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)]
     : character.lastThought;
 
   return (

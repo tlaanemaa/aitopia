@@ -59,7 +59,7 @@ const BaseEventSchema = z.object({
  * Movement event data
  */
 const MovementEventSchema = BaseEventSchema.extend({
-  type: z.literal('movement'),
+  type: z.enum(['movement']),
   destination: PositionSchema.describe('The destination the character is moving to')
 }).describe('Use this to if you want to move');
 
@@ -68,7 +68,7 @@ const MovementEventSchema = BaseEventSchema.extend({
  * Action event data
  */
 const ActionEventSchema = BaseEventSchema.extend({
-  type: z.literal('action'),
+  type: z.enum(['action']),
   action: z.string()
     .describe('Detailed past tense description of the action being performed, including the direction and target when relevant.')
 }).describe('Use this if you want to describe an action');
@@ -77,7 +77,7 @@ const ActionEventSchema = BaseEventSchema.extend({
  * Speech event data
  */
 const SpeechEventSchema = BaseEventSchema.extend({
-  type: z.literal('speech'),
+  type: z.enum(['speech']),
   content: z.string().describe('The actual words being spoken'),
   targetName: z.string().optional().describe('Name of the character being spoken to')
 }).describe('Use this if you want to say something');
@@ -86,7 +86,7 @@ const SpeechEventSchema = BaseEventSchema.extend({
  * Emotion event data
  */
 const EmotionEventSchema = BaseEventSchema.extend({
-  type: z.literal('emotion'),
+  type: z.enum(['emotion']),
   emotion: EmotionSchema.describe('The emotion being expressed'),
 }).describe('Use this if you want to express an emotion');
 
@@ -94,7 +94,7 @@ const EmotionEventSchema = BaseEventSchema.extend({
  * Thought event data
  */
 const ThoughtEventSchema = BaseEventSchema.extend({
-  type: z.literal('thought'),
+  type: z.enum(['thought']),
   content: z.string().describe('The thought content')
 }).describe('Use this if you want to think');
 
@@ -134,7 +134,7 @@ function buildRuntimeCharacterEventSchemas(characterNames: [string, ...string[]]
  * Scene change event data
  */
 const SceneChangeEventSchema = BaseEventSchema.extend({
-  type: z.literal('scene_change'),
+  type: z.enum(['scene_change']),
   newSceneDescription: z.string().describe('Concise description of the new scene')
 }).describe("Use this if you want to change the scene, don't do it too often.");
 
@@ -142,7 +142,7 @@ const SceneChangeEventSchema = BaseEventSchema.extend({
  * Character enter event data
  */
 const CharacterEnterEventSchema = BaseEventSchema.extend({
-  type: z.literal('character_enter'),
+  type: z.enum(['character_enter']),
   name: z.string().describe('Name of the character entering the scene'),
   avatar: z.string().describe('Avatar of the character entering the scene'),
   position: PositionSchema.describe('Position where the character enters'),
@@ -158,7 +158,7 @@ export type CharacterEnterEvent = z.infer<typeof CharacterEnterEventSchema>;
  * Character exit event data
  */
 const CharacterExitEventSchema = BaseEventSchema.extend({
-  type: z.literal('character_exit'),
+  type: z.enum(['character_exit']),
   characterId: z.string().describe('ID of the character leaving the scene'),
   description: z.string().optional().describe('Optional description of how the character leaves')
 }).describe('Use this if you want to remove a character from the world');
@@ -167,7 +167,7 @@ const CharacterExitEventSchema = BaseEventSchema.extend({
  * Generic world event data
  */
 const GenericWorldEventSchema = BaseEventSchema.extend({
-  type: z.literal('generic'),
+  type: z.enum(['generic']),
   description: z.string().describe('Description of the world event')
 }).describe('Use this if you want to describe a generic world event');
 

@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { ChatOllama } from "@langchain/ollama";
-import { ChatPromptValueInterface } from "@langchain/core/prompt_values";
+import { ChatPromptValueInterface, } from "@langchain/core/prompt_values";
+import { isSystemMessage } from "@langchain/core/messages";
+import { callGemini, callOllama, AiProvider } from "../ai";
 
 /**
  * Configuration for the AI
@@ -9,36 +10,51 @@ import { ChatPromptValueInterface } from "@langchain/core/prompt_values";
 export interface AiConfig {
     model: string;
     baseUrl: string;
+    provider: AiProvider;
 }
 
 export class Ai {
     public model: string;
     public baseUrl: string;
+    public provider: AiProvider;
 
     constructor(aiConfig: AiConfig) {
         this.model = aiConfig.model;
         this.baseUrl = aiConfig.baseUrl;
+        this.provider = aiConfig.provider;
     }
 
     public async call<T extends z.Schema>(prompt: ChatPromptValueInterface, responseFormat: T): Promise<z.infer<T>> {
-        const llm = new ChatOllama({
-            baseUrl: this.baseUrl,
-            model: this.model,
-            temperature: 1,
-        })
-
+        // Wrap the response format to make sure we have a top level object
         const wrappedSchema = z.object({
             events: responseFormat.describe("The events that you want to produce."),
         });
 
-        console.log("Prompting LLM with:", prompt.toString());
-        const structuredLlm = llm.withStructuredOutput(zodToJsonSchema(wrappedSchema, {
+        // Convert the response format to a JSON schema
+        const responseSchema = zodToJsonSchema(wrappedSchema, {
             $refStrategy: "none",
-        }));
-        const response = await structuredLlm.invoke(prompt, {
-            timeout: 60000,
         });
-        console.log("LLM responded with:", response);
+
+        // Convert the prompt to a list of messages
+        const messages = prompt.toChatMessages().map(x => ({
+            role: isSystemMessage(x) ? "system" : "user" as const,
+            content: x.content.toString(),
+        } as const));
+
+        // Call the LLM
+        console.log(`Prompting ${this.provider} with:`, prompt.toString());
+        let response: z.infer<T>;
+        switch (this.provider) {
+            case "gemini":
+                response = await callGemini(this.model, messages, responseSchema);
+                break;
+            case "ollama":
+                response = await callOllama(this.model, this.baseUrl, messages, responseSchema);
+                break;
+        }
+        console.log(`${this.provider} responded with:`, response);
+
         return response.events;
     }
 }
+

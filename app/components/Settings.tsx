@@ -10,15 +10,17 @@ export default function Settings() {
     isOpen,
     endpoint,
     modelName,
+    provider,
     availableModels,
     setEndpoint,
     setModelName,
+    setProvider,
     fetchAvailableModels,
   } = useSettingsStore();
 
   useEffect(() => {
     fetchAvailableModels();
-  }, [endpoint, fetchAvailableModels]);
+  }, [provider, endpoint, fetchAvailableModels]);
 
   return (
     <AnimatePresence>
@@ -48,21 +50,32 @@ export default function Settings() {
               </button>
             </div>
 
-            <div className="mb-6 space-y-1">
-              <label className="block text-sm text-foreground font-light">
-                LLM Endpoint
-              </label>
-              <input
-                type="text"
-                value={endpoint}
-                onChange={(e) => setEndpoint(e.target.value)}
-                className="w-full p-2 bg-background border border-[#1a1a1a] rounded text-sm 
-                         focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground
-                         transition-colors"
-              />
+            <div className="mb-6">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setProvider("ollama")}
+                  className={`flex-1 p-3 rounded-lg text-sm transition-colors ${
+                    provider === "ollama"
+                      ? "bg-foreground text-background"
+                      : "bg-[#1a1a1a] hover:bg-[#252525]"
+                  }`}
+                >
+                  Ollama
+                </button>
+                <button
+                  onClick={() => setProvider("gemini")}
+                  className={`flex-1 p-3 rounded-lg text-sm transition-colors ${
+                    provider === "gemini"
+                      ? "bg-foreground text-background"
+                      : "bg-[#1a1a1a] hover:bg-[#252525]"
+                  }`}
+                >
+                  Gemini
+                </button>
+              </div>
             </div>
 
-            <div className="mb-4 space-y-1">
+            <div className="mb-6 space-y-1">
               <label className="block text-sm text-foreground font-light">
                 Model Name
               </label>
@@ -86,6 +99,22 @@ export default function Settings() {
                 )}
               </select>
             </div>
+
+            {provider === "ollama" && (
+              <div className="mb-4 space-y-1">
+                <label className="block text-sm text-foreground font-light">
+                  LLM Endpoint
+                </label>
+                <input
+                  type="text"
+                  value={endpoint}
+                  onChange={(e) => setEndpoint(e.target.value)}
+                  className="w-full p-2 bg-background border border-[#1a1a1a] rounded text-sm 
+                           focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground
+                           transition-colors"
+                />
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}
