@@ -111,6 +111,7 @@ async function runTurnLoop() {
 export default function PlayRunner() {
   const modelName = useSettingsStore((state) => state.modelName);
   const endpoint = useSettingsStore((state) => state.endpoint);
+  const provider = useSettingsStore((state) => state.provider);
   const play = useTheaterStore((state) => state.play);
   const autoRun = useTheaterStore((state) => state.autoRun);
 
@@ -121,7 +122,8 @@ export default function PlayRunner() {
     if (!play) return;
     play.ai.model = modelName;
     play.ai.baseUrl = endpoint;
-  }, [modelName, endpoint, play]);
+    play.ai.provider = provider;
+  }, [modelName, endpoint, provider, play]);
 
   /**
    * Trigger a new turn loop to start after the previous loop
