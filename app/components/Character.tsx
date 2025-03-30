@@ -18,14 +18,12 @@ interface CharacterProps {
   processing: boolean;
 }
 
-export default function Character({ character }: Readonly<CharacterProps>) {
+export default function Character({
+  character,
+  processing,
+}: Readonly<CharacterProps>) {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [screenHeight, setScreenHeight] = useState(window.innerHeight);
-  const [lastThought, setLastThought] = useState(character.thought);
-
-  useEffect(() => {
-    if (character.thought) setLastThought(character.thought);
-  }, [character.thought]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -47,9 +45,9 @@ export default function Character({ character }: Readonly<CharacterProps>) {
     CHARACTER_HEIGHT / 2;
 
   // If processing, show a thinking message
-  const displayThought = lastThought
+  const displayThought = processing
     ? "Hmm... what should I do next?"
-    : character.thought;
+    : character.lastThought;
 
   return (
     <div
@@ -75,13 +73,13 @@ export default function Character({ character }: Readonly<CharacterProps>) {
         <div className="absolute -bottom-7 p-1 rounded-md text-center text-lg font-semibold bg-opacity-20 bg-black whitespace-pre">
           {character.name}
         </div>
-        {(displayThought.trim() || character.speech.trim()) && (
-          <div className="absolute bottom-full flex flex-col text-sm p-2 w-[300px] rounded-md items-center space-y-2 bg-black/30 backdrop-blur-sm">
+        {(displayThought.trim() || character.currentSpeech.trim()) && (
+          <div className="absolute bottom-full flex flex-col mb-2 text-sm w-60 items-center space-y-2">
             {displayThought && (
               <ThoughtBubble text={displayThought} speed={30} />
             )}
-            {character.speech && (
-              <SpeechBubble text={character.speech} speed={30} />
+            {character.currentSpeech && (
+              <SpeechBubble text={character.currentSpeech} speed={30} />
             )}
           </div>
         )}

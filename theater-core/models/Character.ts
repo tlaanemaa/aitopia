@@ -47,6 +47,8 @@ const responseFormat = z.array(CharacterEventSchema).describe('Array of events d
  */
 export class Character extends Entity {
     private perception: Perception;
+    public lastThought: string = '';
+    public lastSpeech: string = '';
 
     constructor(
         ai: Ai,
@@ -134,6 +136,7 @@ export class Character extends Entity {
         const source = this.entityRegistry.getEntity(event.sourceId)
         if (!source) return;
         if (source.id === this.id) {
+            this.lastSpeech = event.content;
             this.memory.add(`I said: "${event.content}" ${event.targetName ? `to ${event.targetName}` : ''}`);
         } else if (isInRange(event.position, this.position, this.perception.radius.hearing)) {
             this.memory.add(`${source.name} said: "${event.content}" ${event.targetName ? `to ${event.targetName}` : ''}`);
@@ -166,6 +169,7 @@ export class Character extends Entity {
         const source = this.entityRegistry.getEntity(event.sourceId)
         if (!source) return;
         if (source.id === this.id) {
+            this.lastThought = event.content;
             this.memory.add(`I thought: "${event.content}"`);
         }
     }

@@ -131,6 +131,7 @@ export class Play {
   public getState() {
     const speechEvents = this.currentEvents.filter(e => e.type === 'speech');
     const thoughtEvents = this.currentEvents.filter(e => e.type === 'thought');
+
     const characters = this.entityRegistry.getCharacters().map(c => ({
       id: c.id,
       name: c.name,
@@ -138,8 +139,10 @@ export class Play {
       position: c.position,
       active: c.id === this.currentTurnEntity.id,
       emotion: c.emotion,
-      speech: speechEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
-      thought: thoughtEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
+      lastThought: c.lastThought,
+      lastSpeech: c.lastSpeech,
+      currentSpeech: speechEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
+      currentThought: thoughtEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
     }));
     const turnOrder = this.turnOrder.map(e => ({
       id: e.id,
