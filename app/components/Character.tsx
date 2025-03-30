@@ -7,16 +7,13 @@ import { getAvatarUrl } from "../constants";
 import { CharacterState } from "@/theater-core";
 
 const thinkingMessages = [
-  "Hmm... what to do next?",
-  "Umm... let me think",
-  "Hmm... my next move",
+  "Hmm...",
+  "Umm...",
   "Let's see...",
-  "Hmm... interesting choice",
-  "Umm... maybe this way",
-  "Hmm... or perhaps that",
-  "Let me consider...",
-  "Hmm... what's best?",
-  "Umm... decisions decisions",
+  "Thinking...",
+  "Well...",
+  "Let me think...",
+  "I wonder...",
 ];
 
 interface CharacterProps {

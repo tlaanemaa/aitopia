@@ -7,6 +7,8 @@ import { speak } from "../utils/voice";
 import { EnrichedEvent } from "@/theater-core";
 
 const MIN_TURN_TIME = 2000;
+const TOTAL_RUNTIME_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+const SESSION_START_TIME = Date.now();
 let CURRENT_TURN_LOOP: Promise<void> = Promise.resolve();
 
 /**
@@ -76,13 +78,21 @@ async function readSpeeches(events: EnrichedEvent[]) {
  */
 async function runTurnLoop() {
   let currentSpeeches: Promise<void> = Promise.resolve();
-  const { syncPlayState, incrementTurn, addError } = getTheaterState();
+  const { syncPlayState, incrementTurn, addError, setAutoRun } =
+    getTheaterState();
   syncPlayState();
 
   // It's important to get the new state every time.
   while (getTheaterState().autoRun) {
     const turnStartTime = Date.now();
     try {
+      // Check for total runtime timeout
+      if (Date.now() - SESSION_START_TIME > TOTAL_RUNTIME_TIMEOUT) {
+        console.log("Total runtime timeout reached, stopping auto-run");
+        setAutoRun(false);
+        break;
+      }
+
       incrementTurn();
       const [newEvents] = await Promise.all([
         processNextTurn(),
