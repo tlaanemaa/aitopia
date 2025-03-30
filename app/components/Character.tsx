@@ -46,7 +46,7 @@ export default function Character({
 
   // If processing, show a thinking message
   const displayThought = processing
-    ? "Hmm... what should I do next?"
+    ? "Hmm... now what?"
     : character.lastThought;
 
   return (
