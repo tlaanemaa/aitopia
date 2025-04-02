@@ -70,7 +70,7 @@ const MovementEventSchema = BaseEventSchema.extend({
 const ActionEventSchema = BaseEventSchema.extend({
   type: z.enum(['action']),
   action: z.string()
-    .describe("A detailed narration of the action, always including the character's name, along with the direction and target when relevant.")
+    .describe("A detailed narration of the action in third person. Always include the character's name, along with the direction and target when relevant.")
 }).describe('Use this if you want to describe an action');
 
 /**
