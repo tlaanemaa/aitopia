@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ChatOllama } from "@langchain/ollama";
-import { JsonSchema, Messages } from "./types";
+import { JsonSchema, Messages } from "../types";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 
 /**
@@ -21,4 +21,16 @@ export async function callOllama<T extends z.Schema>(
 
     const response = await llm.invoke(prompt, { timeout: 60000 });
     return response;
+}
+
+/**
+ * Get the list of Ollama models
+ */
+export async function getOllamaModels(baseUrl: string) {
+    const response = await fetch(`${baseUrl}/api/tags`);
+    const data = await response.json();
+    const models: string[] = data.models.map(
+        (model: { name: string }) => model.name
+    );
+    return models;
 }

@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AiProvider } from "@/theater-core";
-
-const GEMINI_MODELS = ["gemini-2.0-flash-lite"];
+import { aiProviders, AiProvider } from "@/ai";
 
 interface SettingsState {
   endpoint: string;
@@ -36,28 +34,14 @@ export const useSettingsStore = create<SettingsState>()(
       setAvailableModels: (models) => set({ availableModels: models }),
       toggleSettings: () => set((state) => ({ isOpen: !state.isOpen })),
       fetchAvailableModels: async () => {
-        const currentProvider = get().provider;
-
-        if (currentProvider === "gemini") {
-          set({ availableModels: GEMINI_MODELS });
-          if (!GEMINI_MODELS.includes(get().modelName)) {
-            set({ modelName: GEMINI_MODELS[0] });
-          }
-          return;
-        }
-
         try {
-          const baseUrl = get().endpoint;
-          const response = await fetch(`${baseUrl}/api/tags`);
-          const data = await response.json();
-          const models: string[] = data.models.map(
-            (model: { name: string }) => model.name
-          );
-          set({ availableModels: models });
+          const currentProvider = get().provider;
+          const availableModels = await aiProviders[currentProvider].getModels(get().endpoint) as string[];
+          set({ availableModels });
 
           // If current model isn't in the list, select the first available one
-          if (models.length > 0 && !models.includes(get().modelName)) {
-            set({ modelName: models[0] });
+          if (availableModels.length > 0 && !availableModels.includes(get().modelName)) {
+            set({ modelName: availableModels[0] });
           }
         } catch (error) {
           console.error("Failed to fetch models:", error);

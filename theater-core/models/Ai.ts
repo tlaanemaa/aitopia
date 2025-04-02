@@ -2,7 +2,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { ChatPromptValueInterface, } from "@langchain/core/prompt_values";
 import { isSystemMessage } from "@langchain/core/messages";
-import { callGemini, callOllama, AiProvider } from "../ai";
+import { aiProviders, AiProvider } from "@/ai";
 
 /**
  * Configuration for the AI
@@ -46,10 +46,10 @@ export class Ai {
         let response: z.infer<T>;
         switch (this.provider) {
             case "gemini":
-                response = await callGemini(this.model, messages, responseSchema);
+                response = await aiProviders.gemini.call(this.model, messages, responseSchema);
                 break;
             case "ollama":
-                response = await callOllama(this.model, this.baseUrl, messages, responseSchema);
+                response = await aiProviders.ollama.call(this.model, this.baseUrl, messages, responseSchema);
                 break;
         }
         console.log(`${this.provider} responded with:`, response);
