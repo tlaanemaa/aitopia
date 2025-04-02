@@ -4,6 +4,9 @@ import { Entity } from "./Entity";
 import { z } from "zod";
 import { ChatPromptValueInterface } from "@langchain/core/prompt_values";
 import { positionToString } from "../utils/util";
+import { EntityRegistry } from "../service/EntityRegistry";
+import { AssetRegistry } from "../service/AssetRegistry";
+import { Ai } from "./Ai";
 
 const DIRECTOR_SYSTEM_PROMPT = `
 You are the Director, shaping an evolving story. You control the world—settings, characters, and events. You can add characters, alter the environment, or override characters as needed.
@@ -69,7 +72,15 @@ const userInputPromptTemplate = ChatPromptTemplate.fromMessages([
 export class Director extends Entity {
   public readonly name = "Director";
   public readonly avatar = "director.png";
-  protected memorySize = 100;
+
+  constructor(
+    ai: Ai,
+    entityRegistry: EntityRegistry,
+    assetRegistry: AssetRegistry,
+  ) {
+    super(ai, entityRegistry, assetRegistry);
+    this.memory.size = 100;
+  }
 
   /**
    * Builds the response format for the director

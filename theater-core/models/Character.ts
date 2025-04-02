@@ -66,6 +66,7 @@ export class Character extends Entity {
     ) {
         super(ai, entityRegistry, assetRegistry);
         this.perception = new Perception(traits);
+        this.memory.size = 30;
     }
 
     /**

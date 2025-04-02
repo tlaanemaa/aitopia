@@ -8,7 +8,7 @@ export interface PerceptionRadius {
 
 export class Perception {
     public readonly radius: PerceptionRadius;
-    private readonly baseRadius = 5;
+    private readonly baseRadius = 100;
     private readonly minRadius = 0;
     private readonly maxRadius = 200;
 
