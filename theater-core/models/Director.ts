@@ -143,7 +143,7 @@ export class Director extends Entity {
       if (!subject) return;
       switch (event.type) {
         case "action":
-          this.memory.add(`${subject.name} performed action: ${event.action}`);
+          this.memory.add(event.action);
           break;
         case "speech":
           this.memory.add(`${subject.name} said: ${event.content}`);

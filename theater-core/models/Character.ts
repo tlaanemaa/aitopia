@@ -149,10 +149,8 @@ export class Character extends Entity {
     private handleAction(event: Extract<EnrichedCharacterEvent, { type: 'action' }>): void {
         const source = this.entityRegistry.getEntity(event.sourceId)
         if (!source) return;
-        if (source.id === this.id) {
-            this.memory.add(`I ${event.action.toLowerCase()}`);
-        } else if (isInRange(event.position, this.position, this.perception.radius.sight)) {
-            this.memory.add(`${source.name} ${event.action.toLowerCase()}`);
+        if (source.id === this.id || isInRange(event.position, this.position, this.perception.radius.sight)) {
+            this.memory.add(event.action);
         }
     }
 
