@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useTheaterStore, getTheaterState } from "../store/theaterStore";
 import { useSettingsStore } from "../store/settingsStore";
-import { speak } from "../utils/voice";
+import { speak, NARRATOR_SETTINGS } from "../utils/voice";
 import { EnrichedEvent } from "@/theater-core";
 
 const MIN_TURN_TIME = 2000;
@@ -58,12 +58,31 @@ async function processNextTurn() {
  */
 async function readSpeeches(events: EnrichedEvent[]) {
   const { setActiveCharacter, addError } = getTheaterState();
-  const speakers = events.filter((e) => e.type === "speech");
+  const speakers = events.filter((e) =>
+    ["speech", "generic", "scene_change", "action"].includes(e.type)
+  );
 
   for (const speaker of speakers) {
     try {
-      setActiveCharacter(speaker.sourceId);
-      await speak(speaker.sourceId, speaker.content);
+      switch (speaker.type) {
+        case "speech":
+          setActiveCharacter(speaker.sourceId);
+          await speak(speaker.sourceId, speaker.content);
+          break;
+        case "action":
+          await speak("Narrator", speaker.action, NARRATOR_SETTINGS);
+          break;
+        case "generic":
+          await speak("Narrator", speaker.description, NARRATOR_SETTINGS);
+          break;
+        case "scene_change":
+          await speak(
+            "Narrator",
+            speaker.newSceneDescription,
+            NARRATOR_SETTINGS
+          );
+          break;
+      }
     } catch (error) {
       console.error(error);
       addError(error as Error);

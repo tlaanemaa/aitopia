@@ -3,8 +3,20 @@ import { hashString } from "./hash";
 
 const SUPPORTED_LANGUAGES = [
   "en", // English
-  // "fr", // French
+  "fr", // French
 ] as const;
+
+type VoiceSettings = {
+  rate?: number;  // 0.1 to 10, default 1
+  pitch?: number; // 0 to 2, default 1
+  volume?: number; // 0 to 1, default 1
+};
+
+export const NARRATOR_SETTINGS: VoiceSettings = {
+  rate: 0.8,     // Much slower for dramatic pauses
+  pitch: 0.65,   // Deeper voice for gravitas
+  volume: 1,   // Slightly softer for intensity
+};
 
 class SpeechManager {
   private currentUtterance: SpeechSynthesisUtterance | null = null;
@@ -48,7 +60,7 @@ class SpeechManager {
     speechSynthesis.speak(unlock);
   }
 
-  async speak(name: string, text: string): Promise<void> {
+  async speak(name: string, text: string, settings?: VoiceSettings): Promise<void> {
     return new Promise(async (resolve) => {
       if (!window?.speechSynthesis) {
         resolve();
@@ -74,6 +86,13 @@ class SpeechManager {
 
       const utterance = new SpeechSynthesisUtterance(text);
       this.currentUtterance = utterance;
+
+      // Apply voice settings
+      if (settings) {
+        utterance.rate = settings.rate ?? 1;
+        utterance.pitch = settings.pitch ?? 1;
+        utterance.volume = settings.volume ?? 1;
+      }
 
       // Try to set a voice if available
       const hasVoices = await this.voicesLoaded;
@@ -114,6 +133,6 @@ class SpeechManager {
 }
 
 const speechManager = new SpeechManager();
-export const speak = (name: string, text: string) =>
-  speechManager.speak(name, text);
+export const speak = (name: string, text: string, settings?: VoiceSettings) =>
+  speechManager.speak(name, text, settings);
 export const initializeVoices = () => speechManager.initializeVoices();

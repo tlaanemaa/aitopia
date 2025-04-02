@@ -70,7 +70,7 @@ const MovementEventSchema = BaseEventSchema.extend({
 const ActionEventSchema = BaseEventSchema.extend({
   type: z.enum(['action']),
   action: z.string()
-    .describe('Detailed past tense description of the action being performed, including the direction and target when relevant.')
+    .describe("A detailed narration of the action, always including the character's name, along with the direction and target when relevant.")
 }).describe('Use this if you want to describe an action');
 
 /**
@@ -187,9 +187,9 @@ export type WorldEvent = z.infer<typeof WorldEventSchema>;
  */
 function buildRuntimeWorldEventSchema(avatars: [string, ...string[]]) {
   return z.union([
-    // SceneChangeEventSchema, // The AI is abusing this
+    SceneChangeEventSchema, // The AI is abusing this
     CharacterEnterEventSchema.extend({ avatar: z.enum(avatars).describe('Avatar of the character entering the scene') }),
-    // CharacterExitEventSchema, // FIXME: Only allow exit when there characters
+    CharacterExitEventSchema, // FIXME: Only allow exit when there characters
     GenericWorldEventSchema
   ])
 }
