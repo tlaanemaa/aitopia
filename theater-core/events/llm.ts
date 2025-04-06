@@ -20,11 +20,11 @@ import type { EntityRegistry } from "../service/EntityRegistry";
  */
 export function characterEventSchema() {
     return z.object({
-        speech: SpeechSchema.optional().describe('What you want to say'),
-        thought: ThoughtSchema.optional().describe('What you are thinking about'),
-        action: ActionSchema.optional().describe('What you want to do'),
-        emotion: EmotionSchema.optional().describe('What you are feeling'),
-        movement: MovementDestinationSchema.optional().describe('Where you want to move to'),
+        say: SpeechSchema.optional().describe('What you are saying'),
+        think: ThoughtSchema.optional().describe('What you are thinking about'),
+        performAction: ActionSchema.optional().describe('Third person narration of what you did.'),
+        feelEmotion: EmotionSchema.optional().describe('What you are feeling'),
+        moveTo: MovementDestinationSchema.optional().describe('Where you are moving to'),
     });
 }
 
@@ -38,48 +38,48 @@ export function transformCharacterEvent(
 ): CharacterEvent[] {
     const events: CharacterEvent[] = [];
 
-    if (event.speech) {
+    if (event.say) {
         events.push({
             type: 'speech',
             name,
             position,
-            data: event.speech,
+            data: event.say,
         });
     }
 
-    if (event.thought) {
+    if (event.think) {
         events.push({
             type: 'thought',
             name,
             position,
-            data: event.thought,
+            data: event.think,
         });
     }
 
-    if (event.action) {
+    if (event.performAction) {
         events.push({
             type: 'action',
             name,
             position,
-            data: event.action,
+            data: event.performAction,
         });
     }
 
-    if (event.emotion) {
+    if (event.feelEmotion) {
         events.push({
             type: 'emotion',
             name,
             position,
-            data: event.emotion,
+            data: event.feelEmotion,
         });
     }
 
-    if (event.movement) {
+    if (event.moveTo) {
         events.push({
             type: 'movement',
             name,
             position,
-            data: event.movement,
+            data: event.moveTo,
         });
     }
 
@@ -103,23 +103,23 @@ function directorEventSchemaWithNames(
     characterNames: [string, ...string[]]
 ) {
     const CharacterEnterSchemaWithAvatars = CharacterCreateSchema.extend({
-        avatar: z.enum(avatars).describe('Avatar of the character entering the scene')
+        avatar: z.enum(avatars).describe('Avatar image of the character entering the play')
     });
 
     const CharacterExitSchemaWithNames = CharacterRemoveSchema.extend({
-        name: z.enum(characterNames as [string, ...string[]]).describe('Name of the character leaving the scene')
+        name: z.enum(characterNames as [string, ...string[]]).describe('Name of the character leaving the play')
     });
 
-    const CharacterEventSchemaWithNames = z.record(
-        z.enum(characterNames as [string, ...string[]]), characterEventSchema()
-    );
+    const CharacterEventSchemaWithNames = characterEventSchema().extend({
+        name: z.enum(characterNames as [string, ...string[]]).describe('Name of the character')
+    });
 
     return z.object({
-        sceneChange: SceneDescriptionSchema.optional().describe('What you want to change the scene to'),
-        genericEvent: GenericWorldEventDescriptionSchema.optional().describe('What you want to do'),
+        sceneChange: SceneDescriptionSchema.optional().describe('A very concise description of the scene you want to change to'),
+        genericEvent: GenericWorldEventDescriptionSchema.optional().describe('A very concise description of what you want to do'),
         newCharacters: z.array(CharacterEnterSchemaWithAvatars).optional().describe('New characters to add into the play'),
         charactersToRemove: z.array(CharacterExitSchemaWithNames).optional().describe('Characters to remove from the play'),
-        characterEvents: CharacterEventSchemaWithNames.optional().describe('Events for each character'),
+        characterEvents: z.array(CharacterEventSchemaWithNames).optional().describe('Events for each character'),
     });
 }
 
@@ -179,11 +179,11 @@ export function transformDirectorEvent(
     }
 
     if (event.characterEvents) {
-        Object.entries(event.characterEvents).forEach(([name, characterEvent]) => {
-            const [character] = entityRegistry.getCharactersByName(name);
+        event.characterEvents.forEach(characterEvent => {
+            const [character] = entityRegistry.getCharactersByName(characterEvent.name);
             if (!character) return;
             events.push(
-                ...transformCharacterEvent(name, character.position, characterEvent)
+                ...transformCharacterEvent(characterEvent.name, character.position, characterEvent)
             )
         });
     }
