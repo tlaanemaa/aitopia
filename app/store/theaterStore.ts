@@ -47,6 +47,7 @@ export const useTheaterStore = create<TheaterStore>()(
                 model: getSettings().modelName,
                 baseUrl: getSettings().endpoint,
                 provider: getSettings().provider,
+                geminiKey: getSettings().geminiKey,
             },
             AVATAR_URLS,
             []
