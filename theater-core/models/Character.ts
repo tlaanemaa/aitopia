@@ -29,7 +29,7 @@ Recent events and observations:
 
 You are at {position} and feel {emotion}. The time is {time}.
 {nudges}
-From your perspective, decide your next move or words. Choose any event type that feels right.
+From your perspective, decide your next move or words. Keep it interesting!
 Return as JSON.
 `;
 

@@ -16,7 +16,10 @@ export class EventSanitizer {
         const seenCharacterNames = new Set<string>();
         events = events.filter(event => {
             if (event.type === 'character_enter') {
-                if (seenCharacterNames.has(event.data.name)) {
+                if (
+                    seenCharacterNames.has(event.data.name)
+                    || this.entityRegistry.getCharacters().some(c => c.name === event.data.name)
+                ) {
                     return false;
                 }
                 seenCharacterNames.add(event.data.name);
