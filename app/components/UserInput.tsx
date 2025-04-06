@@ -9,7 +9,7 @@ import { initializeVoices } from "../utils/voice";
 import clsx from "clsx";
 
 export default function UserInput() {
-  const { turnCount, setAutoRun, queueInput, isProcessingUserInput } =
+  const { turnCount, autoRun, setAutoRun, queueInput, isProcessingUserInput } =
     useTheaterStore();
   const [input, setInput] = useState("");
   const ellipsis = useEllipsis(isProcessingUserInput);
@@ -18,12 +18,10 @@ export default function UserInput() {
   const sendInput = useCallback(async () => {
     const trimmedInput = input.trim();
     if (trimmedInput) queueInput(trimmedInput);
-    if (isInitialState) {
-      initializeVoices();
-      setAutoRun(true);
-    }
+    if (isInitialState) initializeVoices();
+    if (!autoRun) setAutoRun(true);
     setInput("");
-  }, [input, queueInput, setAutoRun, isInitialState]);
+  }, [input, queueInput, setAutoRun, isInitialState, autoRun]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && input.trim()) {

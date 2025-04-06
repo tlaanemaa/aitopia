@@ -7,8 +7,7 @@ import { speak, NARRATOR_SETTINGS } from "../utils/voice";
 import { PlayEvent } from "@/theater-core";
 
 const MIN_TURN_TIME = 2000;
-const TOTAL_RUNTIME_TIMEOUT = 15 * 60 * 1000; // 15 minutes
-const SESSION_START_TIME = Date.now();
+const USER_INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 let CURRENT_TURN_LOOP: Promise<void> = Promise.resolve();
 
 /**
@@ -100,10 +99,15 @@ async function runTurnLoop() {
   // It's important to get the new state every time.
   while (getTheaterState().autoRun) {
     const turnStartTime = Date.now();
+    const { lastUserInputTime } = getTheaterState();
     try {
-      // Check for total runtime timeout
-      if (Date.now() - SESSION_START_TIME > TOTAL_RUNTIME_TIMEOUT) {
-        console.log("Total runtime timeout reached, stopping auto-run");
+      // Check for user inactivity timeout
+      if (Date.now() - lastUserInputTime > USER_INACTIVITY_TIMEOUT) {
+        addError(
+          new Error(
+            "No user input for 10 minutes, stopping auto-run. Send a message to continue."
+          )
+        );
         setAutoRun(false);
         break;
       }

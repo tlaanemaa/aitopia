@@ -25,6 +25,7 @@ interface TheaterStore {
     isProcessingUserInput: boolean;
     turnCount: number;
     errors: ErrorRecord[];
+    lastUserInputTime: number;
 
     // Simple actions for state updates
     syncPlayState: () => void;
@@ -64,6 +65,7 @@ export const useTheaterStore = create<TheaterStore>()(
         turnCount: 0,
         directorLog: [],
         errors: [],
+        lastUserInputTime: Date.now(),
 
         // Actions
         syncPlayState: () => set((state) => {
@@ -81,7 +83,8 @@ export const useTheaterStore = create<TheaterStore>()(
         setProcessingCharacter: (id) => set({ processingCharacterId: id }),
 
         queueInput: (input) => set((state) => ({
-            inputQueue: [...state.inputQueue, input]
+            inputQueue: [...state.inputQueue, input],
+            lastUserInputTime: Date.now()
         })),
 
         clearInputQueue: () => set({ inputQueue: [] }),
