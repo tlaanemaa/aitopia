@@ -1,12 +1,10 @@
 /**
- * LLM facing event types for the theater-core domain
+ * Core types and schemas for the theater-core domain
  */
 import { z } from 'zod';
 
 // ================ Core Types ================
-/**
- * Position in 2D space
- */
+
 const PositionSchema = z.object({
   x: z
     .number()
@@ -16,32 +14,42 @@ const PositionSchema = z.object({
     .describe('Vertical position in the world. Between 0 and 100, where 0 is the top edge and 100 is the bottom edge.')
 });
 
-export type Position = z.infer<typeof PositionSchema>;
+const TraitSchema = z.enum(['perceptive', 'oblivious', 'empath', 'stoic', 'aware', 'unaware'])
+  .describe('Traits of a character');
 
-/**
- * Emotions
- */
-const EmotionSchema = z.enum(['neutral', 'happy', 'sad', 'angry']).describe('The emotion being expressed');
-export type Emotion = z.infer<typeof EmotionSchema>;
+export const MovementDestinationSchema = PositionSchema
+  .describe('The destination the character is moving to')
 
-/**
- * Character traits
- */
-const TraitSchema = z.enum([
-  // Perception traits
-  'perceptive',      // Better at noticing things (increases sight and hearing)
-  'oblivious',       // Poor at noticing things (decreases sight and hearing)
+export const ActionSchema = z.string()
+  .describe("A detailed narration of the action in third person. Always include the character's name, along with the direction and target when relevant.")
 
-  // Emotional traits
-  'empath',          // Better at sensing emotions (increases emotion)
-  'stoic',           // Poor at sensing emotions (decreases emotion)
+export const SpeechSchema = z.string()
+  .describe('The actual words being spoken')
 
-  // Combined traits
-  'aware',           // Good at all perception (increases all)
-  'unaware'          // Poor at all perception (decreases all)
-]).describe('Traits of a character');
+export const EmotionSchema = z.enum(['neutral', 'happy', 'sad', 'angry'])
+  .describe('The emotion being expressed');
 
-export type Trait = z.infer<typeof TraitSchema>;
+export const ThoughtSchema = z.string()
+  .describe('The thought content')
+
+export const SceneDescriptionSchema = z.string()
+  .describe('A concise description of the new scene')
+
+export const GenericWorldEventDescriptionSchema = z.string()
+  .describe('A concise description of the world event')
+
+export const CharacterCreateSchema = z.object({
+  name: z.string().describe('Name of the character entering the scene'),
+  avatar: z.string().describe('Avatar of the character entering the scene'),
+  position: PositionSchema.describe('Position where the character enters'),
+  traits: TraitSchema.array().describe('Traits of the character entering the scene'),
+  emotion: EmotionSchema.describe('Emotion of the character entering the scene'),
+  backstory: z.string().optional().describe('Backstory of the character entering the scene'),
+}).describe('Use this to create a new character');
+
+export const CharacterRemoveSchema = z.object({
+  name: z.string().describe('Name of the character leaving the scene'),
+}).describe('Use this to remove a character from the scene');
 
 /**
  * Base event type
@@ -50,53 +58,37 @@ const BaseEventSchema = z.object({
   type: z.string().describe('Type of the event'),
 });
 
-// ================ Movement System ================
-/**
- * Types of movement a character can perform
- */
+// ================ Character Events ================
 
-/**
- * Movement event data
- */
-const MovementEventSchema = BaseEventSchema.extend({
-  type: z.enum(['movement']),
-  destination: PositionSchema.describe('The destination the character is moving to')
+const BaseCharacterEventSchema = BaseEventSchema.extend({
+  name: z.string().describe('Name of the character performing the action'),
+  position: PositionSchema.describe('Position at the time of the event')
+})
+
+const MovementEventSchema = BaseCharacterEventSchema.extend({
+  type: z.literal('movement'),
+  data: MovementDestinationSchema
 }).describe('Use this to if you want to move');
 
-// ================ Character Actions ================
-/**
- * Action event data
- */
-const ActionEventSchema = BaseEventSchema.extend({
-  type: z.enum(['action']),
-  action: z.string()
-    .describe("A detailed narration of the action in third person. Always include the character's name, along with the direction and target when relevant.")
+const ActionEventSchema = BaseCharacterEventSchema.extend({
+  type: z.literal('action'),
+  data: ActionSchema
 }).describe('Use this if you want to describe an action');
 
-/**
- * Speech event data
- */
-const SpeechEventSchema = BaseEventSchema.extend({
-  type: z.enum(['speech']),
-  content: z.string().describe('The actual words being spoken'),
-  targetName: z.string().optional().describe('Name of the character being spoken to')
-}).describe('Use this if you want to say something');
+const SpeechEventSchema = BaseCharacterEventSchema.extend({
+  type: z.literal('speech'),
+  data: SpeechSchema,
+});
 
-/**
- * Emotion event data
- */
-const EmotionEventSchema = BaseEventSchema.extend({
-  type: z.enum(['emotion']),
-  emotion: EmotionSchema.describe('The emotion being expressed'),
-}).describe('Use this if you want to express an emotion');
+const EmotionEventSchema = BaseCharacterEventSchema.extend({
+  type: z.literal('emotion'),
+  data: EmotionSchema,
+});
 
-/**
- * Thought event data
- */
-const ThoughtEventSchema = BaseEventSchema.extend({
-  type: z.enum(['thought']),
-  content: z.string().describe('The thought content')
-}).describe('Use this if you want to think');
+const ThoughtEventSchema = BaseCharacterEventSchema.extend({
+  type: z.literal('thought'),
+  data: ThoughtSchema
+});
 
 /**
  * Character event data as a union of all possible event types
@@ -109,110 +101,57 @@ export const CharacterEventSchema = z.union([
   ThoughtEventSchema
 ]).describe('All possible character event types');
 
-export type CharacterEvent = z.infer<typeof CharacterEventSchema>;
-export type EnrichedCharacterEvent = CharacterEvent & {
-  sourceId: string; // We add sourceId programmatically to all character produced events
-  position: Position; // We add position programmatically to all character produced events
-};
-
-/**
- * Builds a union of all possible events that can be emitted to target a specific character
- * These will be emitted from someone else, but be treated as if they were emitted by the character
- */
-function buildRuntimeCharacterEventSchemas(characterNames: [string, ...string[]]) {
-  return z.union([
-    ActionEventSchema.extend({ subjectCharacterName: z.enum(characterNames).describe('Name of the character performing the action') }),
-    SpeechEventSchema.extend({ subjectCharacterName: z.enum(characterNames).describe('Name of the character speaking') }),
-    EmotionEventSchema.extend({ subjectCharacterName: z.enum(characterNames).describe('Name of the character feeling the emotion') }),
-    MovementEventSchema.extend({ subjectCharacterName: z.enum(characterNames).describe('Name of the character moving') }),
-    ThoughtEventSchema.extend({ subjectCharacterName: z.enum(characterNames).describe('Name of the character thinking') })
-  ]).describe('All possible targeted character event types');
-}
-
-// ================ World Events ================
+// ================ Director Events ================
 /**
  * Scene change event data
  */
 const SceneChangeEventSchema = BaseEventSchema.extend({
-  type: z.enum(['scene_change']),
-  newSceneDescription: z.string().describe('Concise description of the new scene')
+  type: z.literal('scene_change'),
+  data: SceneDescriptionSchema
 }).describe("Use this if you want to change the scene, don't do it too often.");
-
-/**
- * Character enter event data
- */
-const CharacterEnterEventSchema = BaseEventSchema.extend({
-  type: z.enum(['character_enter']),
-  name: z.string().describe('Name of the character entering the scene'),
-  avatar: z.string().describe('Avatar of the character entering the scene'),
-  position: PositionSchema.describe('Position where the character enters'),
-  traits: TraitSchema.array().describe('Traits of the character entering the scene'),
-  emotion: EmotionSchema.describe('Emotion of the character entering the scene'),
-  backstory: z.string().optional().describe('Backstory of the character entering the scene'),
-  description: z.string().optional().describe('Optional description of how the character enters')
-}).describe('Use this if you want to add a new character to the world');
-
-export type CharacterEnterEvent = z.infer<typeof CharacterEnterEventSchema>;
-
-/**
- * Character exit event data
- */
-const CharacterExitEventSchema = BaseEventSchema.extend({
-  type: z.enum(['character_exit']),
-  characterId: z.string().describe('ID of the character leaving the scene'),
-  description: z.string().optional().describe('Optional description of how the character leaves')
-}).describe('Use this if you want to remove a character from the world');
 
 /**
  * Generic world event data
  */
 const GenericWorldEventSchema = BaseEventSchema.extend({
-  type: z.enum(['generic']),
-  description: z.string().describe('Description of the world event')
+  type: z.literal('generic'),
+  data: GenericWorldEventDescriptionSchema
 }).describe('Use this if you want to describe a generic world event');
+
+/**
+ * Character enter event data
+ */
+const CharacterEnterEventSchema = BaseEventSchema.extend({
+  type: z.literal('character_enter'),
+  data: CharacterCreateSchema
+}).describe('Use this if you want to add a new character to the world');
+
+/**
+ * Character exit event data
+ */
+const CharacterExitEventSchema = BaseEventSchema.extend({
+  type: z.literal('character_exit'),
+  data: CharacterRemoveSchema
+}).describe('Use this if you want to remove a character from the world');
 
 /**
  * World event data as a union of all possible event types
  */
-const WorldEventSchema = z.union([
+export const DirectorEventSchema = z.union([
   SceneChangeEventSchema,
+  GenericWorldEventSchema,
   CharacterEnterEventSchema,
   CharacterExitEventSchema,
-  GenericWorldEventSchema
+  CharacterEventSchema
 ]).describe('Union of all possible world event types')
-export type WorldEvent = z.infer<typeof WorldEventSchema>;
 
-/**
- * Builds a runtime version of the world event schema with the given avatars
- */
-function buildRuntimeWorldEventSchema(avatars: [string, ...string[]]) {
-  return z.union([
-    SceneChangeEventSchema, // The AI is abusing this
-    CharacterEnterEventSchema.extend({ avatar: z.enum(avatars).describe('Avatar of the character entering the scene') }),
-    CharacterExitEventSchema, // FIXME: Only allow exit when there characters
-    GenericWorldEventSchema
-  ])
-}
+// ================ Types ================
 
-// ================ Director Events ================
-/**
- * Builds a union of all possible director event types with the runtime information
- */
-export function buildDirectorEventSchemas(characterNames: string[], avatars: string[]) {
-  const worldEvents = avatars.length > 0
-    ? buildRuntimeWorldEventSchema(avatars as [string, ...string[]])
-    : WorldEventSchema;
-
-  if (characterNames.length < 1) return worldEvents;
-  const characterEvents = buildRuntimeCharacterEventSchemas(characterNames as [string, ...string[]])
-  return z.union([
-    ...characterEvents.options,
-    ...worldEvents.options,
-  ]);
-}
-
-// ================ Enriched Events ================
-/**
- * Enriched event type
- */
-export type EnrichedEvent = EnrichedCharacterEvent | WorldEvent;
+export type Position = z.infer<typeof PositionSchema>;
+export type Trait = z.infer<typeof TraitSchema>;
+export type Emotion = z.infer<typeof EmotionSchema>;
+export type CharacterCreate = z.infer<typeof CharacterCreateSchema>;
+export type CharacterRemove = z.infer<typeof CharacterRemoveSchema>;
+export type CharacterEvent = z.infer<typeof CharacterEventSchema>;
+export type DirectorEvent = z.infer<typeof DirectorEventSchema>;
+export type PlayEvent = CharacterEvent | DirectorEvent;

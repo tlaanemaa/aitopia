@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useTheaterStore, getTheaterState } from "../store/theaterStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { speak, NARRATOR_SETTINGS } from "../utils/voice";
-import { EnrichedEvent } from "@/theater-core";
+import { PlayEvent } from "@/theater-core";
 
 const MIN_TURN_TIME = 2000;
 const TOTAL_RUNTIME_TIMEOUT = 15 * 60 * 1000; // 15 minutes
@@ -56,7 +56,7 @@ async function processNextTurn() {
 /**
  * Read out speeches in order
  */
-async function readSpeeches(events: EnrichedEvent[]) {
+async function readSpeeches(events: PlayEvent[]) {
   const { setActiveCharacter, addError } = getTheaterState();
   const speakers = events.filter((e) =>
     ["speech", "generic", "scene_change", "action"].includes(e.type)
@@ -66,21 +66,17 @@ async function readSpeeches(events: EnrichedEvent[]) {
     try {
       switch (speaker.type) {
         case "speech":
-          setActiveCharacter(speaker.sourceId);
-          await speak(speaker.sourceId, speaker.content);
+          setActiveCharacter(speaker.name);
+          await speak(speaker.name, speaker.data);
           break;
         case "action":
-          await speak("Narrator", speaker.action, NARRATOR_SETTINGS);
+          await speak("Narrator", speaker.data, NARRATOR_SETTINGS);
           break;
         case "generic":
-          await speak("Narrator", speaker.description, NARRATOR_SETTINGS);
+          await speak("Narrator", speaker.data, NARRATOR_SETTINGS);
           break;
         case "scene_change":
-          await speak(
-            "Narrator",
-            speaker.newSceneDescription,
-            NARRATOR_SETTINGS
-          );
+          await speak("Narrator", speaker.data, NARRATOR_SETTINGS);
           break;
       }
     } catch (error) {

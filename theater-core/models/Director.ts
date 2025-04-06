@@ -1,7 +1,7 @@
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { EnrichedEvent, buildDirectorEventSchemas } from "../events/types";
+import { PlayEvent } from "../events/types";
+import { directorEventSchema, transformDirectorEvent } from "../events/llm";
 import { Entity } from "./Entity";
-import { z } from "zod";
 import { ChatPromptValueInterface } from "@langchain/core/prompt_values";
 import { positionToString } from "../utils/util";
 import { EntityRegistry } from "../service/EntityRegistry";
@@ -82,48 +82,20 @@ export class Director extends Entity {
     this.memory.size = 100;
   }
 
-  /**
-   * Builds the response format for the director
-   * We add a new field to all character events to specify the target character name.
-   * Then we union the character events with the world events.
-   */
-  private buildResponseFormat() {
-    const currentCharacters = this.entityRegistry.getCharacterNames();
-    const directorEventSchemas = buildDirectorEventSchemas(
-      currentCharacters,
-      this.assetRegistry.getAvatars()
-    );
-    return z
-      .array(directorEventSchemas)
-      .describe(
-        "Array of events describing what you want to do next to influence the story."
-      );
-  }
-
   private async getEvents(prompt: ChatPromptValueInterface) {
-    const response = await this.ai.call(prompt, this.buildResponseFormat());
-    // Map over the response and replace the names with ids and positions
-    const enrichedEvents = response.map((event) => {
-      if ("subjectCharacterName" in event) {
-        const character = this.entityRegistry.getCharactersByName(
-          event.subjectCharacterName
-        )[0];
-        return {
-          ...event,
-          sourceId: character.id,
-          position: character.position,
-        };
-      } else {
-        return event;
-      }
-    });
-    return enrichedEvents;
+    const responseFormat = directorEventSchema(
+      this.assetRegistry.getAvatars() as [string, ...string[]],
+      this.entityRegistry.getCharacterNames()
+    )
+    const response = await this.ai.call(prompt, responseFormat);
+    const events = transformDirectorEvent(response, this.entityRegistry);
+    return events;
   }
 
   /**
    * Take a turn
    */
-  public async takeTurn(): Promise<EnrichedEvent[]> {
+  public async takeTurn(): Promise<PlayEvent[]> {
     const prompt = await directorPromptTemplate.invoke({
       state: this.memory.getMemories() || "N/A",
       scene: this.memory.scene || "N/A",
@@ -135,7 +107,7 @@ export class Director extends Entity {
   /**
    * Handle user input
    */
-  public async handleUserInput(input: string[]): Promise<EnrichedEvent[]> {
+  public async handleUserInput(input: string[]): Promise<PlayEvent[]> {
     const prompt = await userInputPromptTemplate.invoke({
       state: this.memory.getMemories() || "N/A",
       scene: this.memory.scene || "N/A",
@@ -148,49 +120,36 @@ export class Director extends Entity {
   /**
    * Handle events happening in the world
    */
-  public handleEvent(event: EnrichedEvent): void {
-    if ("sourceId" in event) {
-      const subject = this.entityRegistry.getEntity(event.sourceId);
-      if (!subject) return;
-      switch (event.type) {
-        case "action":
-          this.memory.add(event.action);
-          break;
-        case "speech":
-          this.memory.add(`${subject.name} said: ${event.content}`);
-          break;
-        case "emotion":
-          this.memory.add(`${subject.name} felt: ${event.emotion}`);
-          break;
-        case "movement":
-          this.memory.add(
-            `${subject.name} moved to position ${positionToString(
-              event.position
-            )}`
-          );
-          break;
-        case "thought":
-          this.memory.add(`${subject.name} thought: ${event.content}`);
-          break;
-      }
-    } else {
-      switch (event.type) {
-        case "scene_change":
-          this.memory.add(`The scene changed to ${event.newSceneDescription}`);
-          this.memory.setScene(event.newSceneDescription);
-          break;
-        case "character_enter":
-          this.memory.add(`${event.name} entered the scene at ${positionToString(event.position)}`);
-          break;
-        case "character_exit":
-          const character = this.entityRegistry.getEntity(event.characterId);
-          if (!character) return;
-          this.memory.add(`${character.name} exited the scene`);
-          break;
-        case "generic":
-          this.memory.add(`${event.description}`);
-          break;
-      }
+  public handleEvent(event: PlayEvent): void {
+    switch (event.type) {
+      case "scene_change":
+        this.memory.add(`The scene changed to ${event.data}`);
+        this.memory.setScene(event.data);
+        break;
+      case "character_enter":
+        this.memory.add(`${event.data.name} joined at ${positionToString(event.data.position)}`);
+        break;
+      case "character_exit":
+        this.memory.add(`${event.data.name} left`);
+        break;
+      case "action":
+        this.memory.add(`${event.name} ${event.data}`);
+        break;
+      case "speech":
+        this.memory.add(`${event.name} said: ${event.data}`);
+        break;
+      case "emotion":
+        this.memory.add(`${event.name} felt: ${event.data}`);
+        break;
+      case "movement":
+        this.memory.add(`${event.name} moved to ${positionToString(event.position)}`);
+        break;
+      case "thought":
+        this.memory.add(`${event.name} thought: ${event.data}`);
+        break;
+      case "generic":
+        this.memory.add(`${event.data}`);
+        break;
     }
   }
 

@@ -12,7 +12,7 @@ import { Play } from './models/Play';
 export { Play };
 
 // Types
-export type { EnrichedEvent, CharacterEnterEvent } from './events/types';
+export type { PlayEvent, CharacterCreate } from './events/types';
 export type { Position } from './events/types';
 export type { AiConfig } from './models/Ai';
 export type PlayState = ReturnType<typeof Play.prototype.getState>;

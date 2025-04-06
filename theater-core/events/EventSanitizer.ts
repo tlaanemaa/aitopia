@@ -1,5 +1,5 @@
 import { EntityRegistry } from "../service/EntityRegistry";
-import { EnrichedEvent, Position } from "./types";
+import { PlayEvent, Position } from "./types";
 
 const round = (value: number, places: number = 2) => Math.round(value * 10 ** places) / 10 ** places;
 
@@ -11,15 +11,15 @@ export class EventSanitizer {
     /**
      * Sanitizes a list of events.
      */
-    public sanitize(events: EnrichedEvent[]): EnrichedEvent[] {
+    public sanitize(events: PlayEvent[]): PlayEvent[] {
         // Deduplicate character_enter events by name, keeping only the first occurrence
         const seenCharacterNames = new Set<string>();
         events = events.filter(event => {
             if (event.type === 'character_enter') {
-                if (seenCharacterNames.has(event.name)) {
+                if (seenCharacterNames.has(event.data.name)) {
                     return false;
                 }
-                seenCharacterNames.add(event.name);
+                seenCharacterNames.add(event.data.name);
             }
             return true;
         });
@@ -28,29 +28,29 @@ export class EventSanitizer {
         return events.map(event => {
             const otherEvents = events.filter(e => e !== event);
             const otherEventPositions = [
-                ...otherEvents.filter(e => e.type === 'character_enter').map(e => e.position),
-                ...otherEvents.filter(e => e.type === 'movement').map(e => e.destination),
+                ...otherEvents.filter(e => e.type === 'character_enter').map(e => e.data.position),
+                ...otherEvents.filter(e => e.type === 'movement').map(e => e.data),
             ];
 
             switch (event.type) {
                 case 'character_enter':
-                    event.name = this.sanitizeText(event.name, 20);
-                    event.position = this.sanitizePosition(event.position, otherEventPositions);
+                    event.data.name = this.sanitizeText(event.data.name, 20);
+                    event.data.position = this.sanitizePosition(event.data.position, otherEventPositions);
                     break;
                 case 'movement':
-                    event.destination = this.sanitizePosition(event.destination, otherEventPositions, event.sourceId);
+                    event.data = this.sanitizePosition(event.data, otherEventPositions, event.name);
                     break;
                 case 'action':
-                    event.action = this.sanitizeText(event.action, 200);
+                    event.data = this.sanitizeText(event.data, 200);
                     break;
                 case 'thought':
-                    event.content = this.sanitizeText(event.content, 200);
+                    event.data = this.sanitizeText(event.data, 200);
                     break;
                 case 'generic':
-                    event.description = this.sanitizeText(event.description, 200);
+                    event.data = this.sanitizeText(event.data, 200);
                     break;
                 case 'scene_change':
-                    event.newSceneDescription = this.sanitizeText(event.newSceneDescription, 200);
+                    event.data = this.sanitizeText(event.data, 200);
                     break;
             }
             return event;
