@@ -1,12 +1,11 @@
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { EnrichedEvent, buildRuntimeDirectorEventSchema, Event } from "../events/types";
+import { EnrichedCharacterEvent, EnrichedEvent, buildRuntimeDirectorEventSchema } from "../events/types";
 import { Entity } from "./Entity";
-import { z } from "zod";
-import { ChatPromptValueInterface } from "@langchain/core/prompt_values";
 import { positionToString } from "../utils/util";
 import { EntityRegistry } from "../service/EntityRegistry";
 import { AssetRegistry } from "../service/AssetRegistry";
 import { Ai } from "./Ai";
+import { ChatPromptValueInterface } from "@langchain/core/prompt_values";
 
 const DIRECTOR_SYSTEM_PROMPT = `
 You are the Director, shaping an evolving story. You control the world—settings, characters, and events. You can add characters, alter the environment, or override characters as needed.
@@ -85,84 +84,87 @@ export class Director extends Entity {
   /**
    * Take a turn
    */
-  public async takeTurn(): Promise<Event> {
+  public async takeTurn(): Promise<EnrichedEvent[]> {
     const prompt = await directorPromptTemplate.invoke({
       state: this.memory.getMemories() || "N/A",
       scene: this.memory.scene || "N/A",
       time: new Date().toLocaleTimeString("en-US"),
     });
-    const responseFormat = buildRuntimeDirectorEventSchema(
-      this.assetRegistry.getAvatars() as [string, ...string[]],
-      this.entityRegistry.getCharacterNames(),
-    )
-
-    const response = await this.ai.call(prompt, responseFormat);
-    return response;
+    return this.getDirectorEvents(prompt);
   }
 
   /**
    * Handle user input
    */
-  public async handleUserInput(input: string[]): Promise<Event> {
+  public async handleUserInput(input: string[]): Promise<EnrichedEvent[]> {
     const prompt = await userInputPromptTemplate.invoke({
       state: this.memory.getMemories() || "N/A",
       scene: this.memory.scene || "N/A",
       input: input.join("\n") || "N/A",
       time: new Date().toLocaleTimeString("en-US"),
     });
+    return this.getDirectorEvents(prompt);
+  }
+
+  /**
+   * Get the director events and parse out the character events
+   */
+  private async getDirectorEvents(
+    prompt: ChatPromptValueInterface
+  ): Promise<EnrichedEvent[]> {
     const responseFormat = buildRuntimeDirectorEventSchema(
       this.assetRegistry.getAvatars() as [string, ...string[]],
       this.entityRegistry.getCharacterNames(),
     )
+
     const response = await this.ai.call(prompt, responseFormat);
-    return response;
+    const characterEvents: EnrichedCharacterEvent[] = Object.entries(response.characterEvents ?? {}).map(([name, e]) => ({
+      ...e,
+      name,
+      type: 'character_event',
+      position: this.entityRegistry.getCharacter(name)?.position ?? { x: 50, y: 50 },
+    }));
+
+    return [
+      {
+        ...response,
+        type: 'director_event',
+      },
+      ...characterEvents,
+    ];
   }
 
   /**
    * Handle events happening in the world
    */
   public handleEvent(event: EnrichedEvent): void {
-    if ("sourceId" in event) {
-      const subject = this.entityRegistry.getEntity(event.sourceId);
+    if ("name" in event) {
+      const subject = this.entityRegistry.getEntity(event.name);
       if (!subject) return;
-      switch (event.type) {
-        case "action":
-          this.memory.add(event.action);
-          break;
-        case "speech":
-          this.memory.add(`${subject.name} said: ${event.content}`);
-          break;
-        case "emotion":
-          this.memory.add(`${subject.name} felt: ${event.emotion}`);
-          break;
-        case "movement":
-          this.memory.add(
-            `${subject.name} moved to position ${positionToString(
-              event.position
-            )}`
-          );
-          break;
-        case "thought":
-          this.memory.add(`${subject.name} thought: ${event.content}`);
-          break;
+      if (event.action) this.memory.add(event.action);
+      if (event.speech) this.memory.add(`${subject.name} said: ${event.speech}`);
+      if (event.emotion) this.memory.add(`${subject.name} felt: ${event.emotion}`);
+      if (event.destination) this.memory.add(`${subject.name} moved to position ${positionToString(event.destination)}`);
+      if (event.thought) this.memory.add(`${subject.name} thought: ${event.thought}`);
+    }
+
+    if (event.type === "director_event") {
+      if (event.newCharacters) {
+        Object.entries(event.newCharacters).forEach(([name, charConfig]) => {
+          this.memory.add(`${name} joined at ${positionToString(charConfig.position)}`);
+        });
       }
-    } else {
-      switch (event.type) {
-        case "scene_change":
-          this.memory.add(`The scene changed to ${event.newSceneDescription}`);
-          this.memory.setScene(event.newSceneDescription);
-          break;
-        case "character_enter":
-          this.memory.add(`${event.name} entered the scene at ${positionToString(event.position)}`);
-          break;
-        case "character_exit":
-          const character = this.entityRegistry.getEntity(event.characterId);
-          if (!character) return;
-          this.memory.add(`${character.name} exited the scene`);
-          break;
-        case "generic":
-          this.memory.add(`${event.description}`);
-          break;
+      if (event.charactersToRemove) {
+        Object.entries(event.charactersToRemove).forEach(([name]) => {
+          this.memory.add(`${name} left.`);
+        });
+      }
+      if (event.newSceneDescription) {
+        this.memory.add(`The scene changed to ${event.newSceneDescription}`);
+        this.memory.setScene(event.newSceneDescription);
+      }
+      if (event.genericWorldEvent) {
+        this.memory.add(event.genericWorldEvent);
       }
     }
   }

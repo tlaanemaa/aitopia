@@ -1,5 +1,5 @@
 import { EntityRegistry } from "../service/EntityRegistry";
-import { CharacterEvent, DirectorEvent, EnrichedCharacterEvent, EnrichedDirectorEvent, EnrichedEvent, Position, TypedEvent } from "./types";
+import { EnrichedCharacterEvent, EnrichedDirectorEvent, EnrichedEvent, Position } from "./types";
 
 const round = (value: number, places: number = 2) => Math.round(value * 10 ** places) / 10 ** places;
 
@@ -11,25 +11,26 @@ export class EventSanitizer {
     /**
      * Sanitizes a list of events.
      */
-    public sanitize(name: string, event: TypedEvent): EnrichedEvent {
-        switch (event.type) {
-            case 'director_event':
-                return this.sanitizeDirectorEvent(event);
-            case 'character_event':
-                return this.sanitizeCharacterEvent(name, event);
-            default:
-                return event;
-        }
+    public sanitize(events: EnrichedEvent[]): EnrichedEvent[] {
+        return events.map(event => {
+            switch (event.type) {
+                case 'director_event':
+                    return this.sanitizeDirectorEvent(event);
+                case 'character_event':
+                    return this.sanitizeCharacterEvent(event);
+                default:
+                    return event;
+            }
+        });
     }
 
     /**
      * Sanitizes a director event
      */
-    private sanitizeDirectorEvent(event: DirectorEvent): EnrichedDirectorEvent {
+    private sanitizeDirectorEvent(event: EnrichedDirectorEvent): EnrichedDirectorEvent {
         // Create a map of all new character positions, taking the last position for each character
         const newPositions = Object.entries([
             ...Object.entries(event.newCharacters ?? {}).map(([name, c]) => ({ name, position: c.position })),
-            ...Object.entries(event.characterEvents ?? {}).filter(([, e]) => e.destination).map(([name, e]) => ({ name, position: e.destination! })),
         ].reduce(
             (acc, { name, position }) => ({ ...acc, [name]: position }),
             {} as Record<string, Position>
@@ -43,18 +44,6 @@ export class EventSanitizer {
                         ...c,
                         position: this.sanitizePosition(c.position, otherCharacterPositions),
                     }];
-                })
-            );
-        }
-
-        // Avoid collisions on character events
-        if (event.characterEvents) {
-            event.characterEvents = Object.fromEntries(
-                Object.entries(event.characterEvents).map(([name, e]) => {
-                    if (!e.destination) return [name, e];
-                    const otherCharacterPositions = newPositions.filter(([otherName]) => otherName !== name).map(([, position]) => position);
-                    const sanitizedEvent = this.sanitizeCharacterEvent(name, e, otherCharacterPositions);
-                    return [name, sanitizedEvent];
                 })
             );
         }
@@ -75,26 +64,19 @@ export class EventSanitizer {
      * Sanitizes a character event
      */
     private sanitizeCharacterEvent(
-        name: string,
-        event: CharacterEvent,
+        event: EnrichedCharacterEvent,
         otherPositions: Position[] = []
     ): EnrichedCharacterEvent {
-        const enrichedEvent = {
-            type: 'character_event' as const,
-            name,
-            position: this.entityRegistry.getCharacter(name)?.position ?? { x: 50, y: 50 },
-            ...event,
+        if (event.destination) {
+            event.destination = this.sanitizePosition(event.destination, otherPositions, event.name);
         }
-        if (enrichedEvent.destination) {
-            enrichedEvent.destination = this.sanitizePosition(enrichedEvent.destination, otherPositions, name);
-        } else if (enrichedEvent.action) {
-            enrichedEvent.action = this.sanitizeText(enrichedEvent.action, 200);
-        } else if (enrichedEvent.thought) {
-            enrichedEvent.thought = this.sanitizeText(enrichedEvent.thought, 200);
-        } else if (enrichedEvent.speech) {
-            enrichedEvent.speech = this.sanitizeText(enrichedEvent.speech, 200);
+        if (event.speech) {
+            event.speech = this.sanitizeText(event.speech, 200);
         }
-        return enrichedEvent;
+        if (event.thought) {
+            event.thought = this.sanitizeText(event.thought, 200);
+        }
+        return event;
     }
 
     /**

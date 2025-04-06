@@ -58,30 +58,25 @@ async function processNextTurn() {
  */
 async function readSpeeches(events: EnrichedEvent[]) {
   const { setActiveCharacter, addError } = getTheaterState();
-  const speakers = events.filter((e) =>
-    ["speech", "generic", "scene_change", "action"].includes(e.type)
-  );
 
-  for (const speaker of speakers) {
+  for (const event of events) {
     try {
-      switch (speaker.type) {
-        case "speech":
-          setActiveCharacter(speaker.sourceId);
-          await speak(speaker.sourceId, speaker.content);
-          break;
-        case "action":
-          await speak("Narrator", speaker.action, NARRATOR_SETTINGS);
-          break;
-        case "generic":
-          await speak("Narrator", speaker.description, NARRATOR_SETTINGS);
-          break;
-        case "scene_change":
-          await speak(
-            "Narrator",
-            speaker.newSceneDescription,
-            NARRATOR_SETTINGS
-          );
-          break;
+      if (event.type === "character_event") {
+        if (event.speech?.trim()) {
+          setActiveCharacter(event.name);
+          await speak(event.name, event.speech);
+        }
+        if (event.action?.trim()) {
+          setActiveCharacter(event.name);
+          await speak(event.name, event.action, NARRATOR_SETTINGS);
+        }
+      } else if (event.type === "director_event") {
+        if (event.genericWorldEvent?.trim()) {
+          await speak("Narrator", event.genericWorldEvent, NARRATOR_SETTINGS);
+        }
+        if (event.newSceneDescription?.trim()) {
+          await speak("Narrator", event.newSceneDescription, NARRATOR_SETTINGS);
+        }
       }
     } catch (error) {
       console.error(error);

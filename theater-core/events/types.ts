@@ -78,6 +78,7 @@ const CharacterEnterEventSchema = z.object({
   backstory: z.string().optional().describe('Backstory of the character entering the scene'),
   description: z.string().optional().describe('Optional description of how the character enters')
 }).describe('Use this if you want to add a new character to the world');
+export type CharacterEnterEvent = z.infer<typeof CharacterEnterEventSchema>;
 
 /**
  * Character exit event data
@@ -108,7 +109,7 @@ const DirectorEventSchema = z.object({
 }).describe('All possible director event types');
 
 export type DirectorEvent = z.infer<typeof DirectorEventSchema>;
-export type EnrichedDirectorEvent = DirectorEvent & {
+export type EnrichedDirectorEvent = Omit<DirectorEvent, 'characterEvents'> & {
   type: 'director_event';
 };
 
@@ -152,7 +153,4 @@ export function buildRuntimeDirectorEventSchema(
 
 // ================ Event Types ================
 export type Event = CharacterEvent | DirectorEvent;
-export type TypedEvent = Event & {
-  type: 'character_event' | 'director_event';
-}
 export type EnrichedEvent = EnrichedCharacterEvent | EnrichedDirectorEvent;

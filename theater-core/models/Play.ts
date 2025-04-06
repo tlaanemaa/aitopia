@@ -1,6 +1,6 @@
 import { Director } from './Director';
 import { Character } from './Character';
-import { EnrichedEvent, CharacterEnterEvent } from '../events/types';
+import { EnrichedEvent, CharacterEnterEvent, EnrichedCharacterEvent, EnrichedDirectorEvent } from '../events/types';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { Entity } from './Entity';
 import { AssetRegistry } from '../service/AssetRegistry';
@@ -18,7 +18,7 @@ export class Play {
   private readonly entityRegistry = new EntityRegistry();
   private readonly assetRegistry = new AssetRegistry();
   private readonly eventSanitizer = new EventSanitizer(this.entityRegistry);
-  private currentEvents?: EnrichedEvent;
+  private currentEvents: EnrichedEvent[] = [];
   private currentScene: string = '';
   private isProcessing: boolean = false;
 
@@ -29,7 +29,7 @@ export class Play {
    * @param avatars - List of avatars to be used in the play
    * @param seedEvents - List of seed events to be used in the play
    */
-  constructor(aiConfig: AiConfig, avatars: string[], seedEvents?: EnrichedEvent) {
+  constructor(aiConfig: AiConfig, avatars: string[], seedEvents: EnrichedEvent[] = []) {
     this.ai = new Ai(aiConfig);
     this.assetRegistry.setAvatars(avatars);
     this.director = new Director(this.ai, this.entityRegistry, this.assetRegistry);
@@ -39,12 +39,12 @@ export class Play {
     this.handleEvents();
   }
 
-  private addCharacter(charConfig: CharacterEnterEvent): void {
+  private addCharacter(name: string, charConfig: CharacterEnterEvent): void {
     const character = new Character(
       this.ai,
       this.entityRegistry,
       this.assetRegistry,
-      charConfig.name,
+      name,
       charConfig.avatar,
       charConfig.position,
       charConfig.traits,
@@ -61,28 +61,32 @@ export class Play {
   }
 
   private handleEvents(): void {
-    // Sanitize events to ensure they are valid
-    this.currentEvents = this.eventSanitizer.sanitize(this.currentEvents);
+    const directorEvents = this.currentEvents.filter(e => e.type === 'director_event') as EnrichedDirectorEvent[];
 
     // Handle character additions. This is done first to ensure that characters are available during propagation.
-    this.currentEvents
-      .filter(event => event.type === 'character_enter')
-      .forEach(event => this.addCharacter(event));
-
-    // Handle scene changes
-    this.currentEvents
-      .filter(event => event.type === 'scene_change')
-      .forEach(event => this.currentScene = event.newSceneDescription);
-
-    // Propagate events to all characters
-    this.currentEvents.forEach(event => {
-      this.entityRegistry.getEntities().forEach(e => e.handleEvent(event));
+    directorEvents.forEach((e) => {
+      const newCharacters = Object.entries(e.newCharacters ?? {});
+      newCharacters.forEach(([name, charConfig]) => this.addCharacter(name, charConfig));
     });
 
+    // Handle scene changes
+    directorEvents.forEach((e) => {
+      if (e.newSceneDescription) {
+        this.currentScene = e.newSceneDescription;
+      }
+    });
+
+    // Propagate all the events to all characters
+    this.currentEvents.forEach(e => this.entityRegistry.getCharacters().forEach(c => c.handleEvent(e)));
+
+
     // Handle character removals. This is done last to ensure that characters are available during propagation.
-    this.currentEvents
-      .filter(event => event.type === 'character_exit')
-      .forEach(event => this.removeCharacter(event.characterId));
+    directorEvents.forEach((e) => {
+      if (e.charactersToRemove) {
+        const charactersToRemove = Object.keys(e.charactersToRemove);
+        charactersToRemove.forEach(name => this.removeCharacter(name));
+      }
+    });
   }
 
   /**
@@ -111,13 +115,13 @@ export class Play {
 
     try {
       this.isProcessing = true;
-      this.currentEvents = undefined;
+      this.currentEvents = [];
       // Get current entity and their events
-      const newEvent = input && input.length > 0
+      this.currentEvents = input && input.length > 0
         ? await this.director.handleUserInput(input)
         : await this.currentTurnEntity.takeTurn();
 
-      this.currentEvents = this.eventSanitizer.sanitize(this.currentTurnEntity.name, newEvent);
+      this.currentEvents = this.eventSanitizer.sanitize(this.currentEvents);
 
       // Handle internally and return events
       this.handleEvents();
@@ -131,8 +135,8 @@ export class Play {
    * Get the current state of the play, for the UI
    */
   public getState() {
-    const speechEvents = this.currentEvents.filter(e => e.type === 'speech');
-    const thoughtEvents = this.currentEvents.filter(e => e.type === 'thought');
+    const speechEvents = this.currentEvents.filter(e => e.type === 'character_event' && e.speech) as EnrichedCharacterEvent[];
+    const thoughtEvents = this.currentEvents.filter(e => e.type === 'character_event' && e.thought) as EnrichedCharacterEvent[];
 
     const characters = this.entityRegistry.getCharacters().map(c => ({
       id: c.id,
@@ -143,8 +147,8 @@ export class Play {
       emotion: c.emotion,
       lastThought: c.lastThought,
       lastSpeech: c.lastSpeech,
-      currentSpeech: speechEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
-      currentThought: thoughtEvents.filter(e => e.sourceId === c.id).map(e => e.content.trim()).join('\n\n'),
+      currentSpeech: speechEvents.find(e => e.name === c.name)?.speech ?? '',
+      currentThought: thoughtEvents.find(e => e.name === c.name)?.thought ?? '',
     }));
     const turnOrder = this.turnOrder.map(e => ({
       id: e.id,
