@@ -12,9 +12,11 @@ export default function Settings() {
     modelName,
     provider,
     availableModels,
+    geminiKey,
     setEndpoint,
     setModelName,
     setProvider,
+    setGeminiKey,
     fetchAvailableModels,
   } = useSettingsStore();
 
@@ -112,6 +114,23 @@ export default function Settings() {
                   className="w-full p-2 bg-background border border-[#1a1a1a] rounded text-sm 
                            focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground
                            transition-colors"
+                />
+              </div>
+            )}
+
+            {provider === "gemini" && (
+              <div className="mb-4 space-y-1">
+                <label className="block text-sm text-foreground font-light">
+                  Gemini Key
+                </label>
+                <input
+                  type="password"
+                  value={geminiKey}
+                  onChange={(e) => setGeminiKey(e.target.value)}
+                  className="w-full p-2 bg-background border border-[#1a1a1a] rounded text-sm 
+                           focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground
+                           transition-colors"
+                  placeholder="Enter Gemini API key"
                 />
               </div>
             )}

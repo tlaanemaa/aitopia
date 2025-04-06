@@ -4,15 +4,18 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { Messages, JsonSchema } from "../types";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_PASSWORD = process.env.GEMINI_PASSWORD;
+
 /**
  * Call an LLM from Gemini
  * First message is the system prompt, the rest are user messages
  */
-export async function callGemini(model: string, messages: Messages[], responseJsonSchema: JsonSchema) {
+export async function callGemini(model: string, geminiKey: string, messages: Messages[], responseJsonSchema: JsonSchema) {
     const prompt = await ChatPromptTemplate.fromMessages(messages).invoke({});
     const models = await getGeminiModels();
     const llm = new ChatGoogleGenerativeAI({
-        apiKey: process.env.GEMINI_API_KEY,
+        apiKey: geminiKey === GEMINI_PASSWORD ? GEMINI_API_KEY : geminiKey,
         // Make sure it's one of our models to prevent abuse
         model: models.find(m => m === model) ?? models[0],
         temperature: 1,

@@ -11,17 +11,20 @@ export interface AiConfig {
     model: string;
     baseUrl: string;
     provider: AiProvider;
+    geminiKey: string;
 }
 
 export class Ai {
     public model: string;
     public baseUrl: string;
     public provider: AiProvider;
+    public geminiKey: string;
 
     constructor(aiConfig: AiConfig) {
         this.model = aiConfig.model;
         this.baseUrl = aiConfig.baseUrl;
         this.provider = aiConfig.provider;
+        this.geminiKey = aiConfig.geminiKey;
     }
 
     public async call<T extends z.Schema>(prompt: ChatPromptValueInterface, responseFormat: T): Promise<z.infer<T>> {
@@ -46,7 +49,7 @@ export class Ai {
         let response: z.infer<T>;
         switch (this.provider) {
             case "gemini":
-                response = await aiProviders.gemini.call(this.model, messages, responseSchema);
+                response = await aiProviders.gemini.call(this.model, this.geminiKey, messages, responseSchema);
                 break;
             case "ollama":
                 response = await aiProviders.ollama.call(this.model, this.baseUrl, messages, responseSchema);

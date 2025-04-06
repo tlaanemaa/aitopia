@@ -8,10 +8,12 @@ interface SettingsState {
   provider: AiProvider;
   availableModels: string[];
   isOpen: boolean;
+  geminiKey: string;
   setEndpoint: (endpoint: string) => void;
   setModelName: (modelName: string) => void;
   setProvider: (provider: AiProvider) => void;
   setAvailableModels: (models: string[]) => void;
+  setGeminiKey: (key: string) => void;
   toggleSettings: () => void;
   fetchAvailableModels: () => Promise<void>;
 }
@@ -24,6 +26,7 @@ export const useSettingsStore = create<SettingsState>()(
       provider: "ollama",
       availableModels: [],
       isOpen: false,
+      geminiKey: "",
       setEndpoint: (endpoint) => set({ endpoint }),
       setModelName: (modelName) => set({ modelName }),
       setProvider: (provider) => {
@@ -32,6 +35,7 @@ export const useSettingsStore = create<SettingsState>()(
         get().fetchAvailableModels();
       },
       setAvailableModels: (models) => set({ availableModels: models }),
+      setGeminiKey: (key) => set({ geminiKey: key }),
       toggleSettings: () => set((state) => ({ isOpen: !state.isOpen })),
       fetchAvailableModels: async () => {
         try {
@@ -55,6 +59,7 @@ export const useSettingsStore = create<SettingsState>()(
         endpoint: state.endpoint,
         modelName: state.modelName,
         provider: state.provider,
+        geminiKey: state.geminiKey,
       }),
       onRehydrateStorage: () => (state) => {
         // Fetch models when store is rehydrated

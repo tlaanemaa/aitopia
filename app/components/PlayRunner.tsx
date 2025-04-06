@@ -137,6 +137,7 @@ export default function PlayRunner() {
   const modelName = useSettingsStore((state) => state.modelName);
   const endpoint = useSettingsStore((state) => state.endpoint);
   const provider = useSettingsStore((state) => state.provider);
+  const geminiKey = useSettingsStore((state) => state.geminiKey);
   const play = useTheaterStore((state) => state.play);
   const autoRun = useTheaterStore((state) => state.autoRun);
 
@@ -148,7 +149,8 @@ export default function PlayRunner() {
     play.ai.model = modelName;
     play.ai.baseUrl = endpoint;
     play.ai.provider = provider;
-  }, [modelName, endpoint, provider, play]);
+    play.ai.geminiKey = geminiKey;
+  }, [modelName, endpoint, provider, geminiKey, play]);
 
   /**
    * Trigger a new turn loop to start after the previous loop
