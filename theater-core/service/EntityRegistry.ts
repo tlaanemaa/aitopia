@@ -4,7 +4,7 @@ import { Character } from "../models/Character";
 export class EntityRegistry {
     private entities: Record<string, Entity> = {};
     private avatars: Record<string, string> = {};
-    
+
     register(entity: Entity): void {
         this.entities[entity.id] = entity;
     }
@@ -19,6 +19,10 @@ export class EntityRegistry {
 
     getEntities(): Entity[] {
         return Object.values(this.entities);
+    }
+
+    getCharacter(name: string): Character | undefined {
+        return this.getCharacters().find(character => character.name === name);
     }
 
     getCharacters(): Character[] {

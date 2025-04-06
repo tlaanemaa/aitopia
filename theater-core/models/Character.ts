@@ -4,15 +4,14 @@ import {
     EnrichedEvent,
     Position,
     Trait,
-    WorldEvent
+    CharacterEventSchema,
+    CharacterEvent,
 } from '../events/types';
 import { isInRange, positionToString } from '../utils/util';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { Perception } from './Perception';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { Entity } from './Entity';
-import { z } from 'zod';
-import { CharacterEventSchema } from '../events/types';
 import { Ai } from './Ai';
 import { AssetRegistry } from '../service/AssetRegistry';
 
@@ -40,8 +39,6 @@ const promptTemplate = ChatPromptTemplate.fromMessages([
     ["system", CHARACTER_SYSTEM_PROMPT.trim()],
     ["user", CHARACTER_TASK_PROMPT.trim()],
 ]);
-
-const responseFormat = z.array(CharacterEventSchema).describe('Array of events describing what you want to do next');
 
 /**
  * Character class - Can only produce character events
@@ -72,7 +69,7 @@ export class Character extends Entity {
     /**
      * Take a turn
      */
-    public async takeTurn(): Promise<EnrichedCharacterEvent[]> {
+    public async takeTurn(): Promise<CharacterEvent> {
         const prompt = await promptTemplate.invoke({
             name: this.name,
             backstory: this.backstory || 'N/A',
@@ -83,19 +80,12 @@ export class Character extends Entity {
             time: new Date().toLocaleTimeString("en-US"),
             nudges: this.getNudges()
         });
-        const response = await this.ai.call(prompt, responseFormat);
-        const enrichedEvents = response.map(event => ({
-            ...event,
-            sourceId: this.id,
-            position: this.position
-        }));
 
-        const containsMovement = enrichedEvents.some(event => event.type === 'movement');
-        this.turnsSinceMovement = containsMovement ? 0 : this.turnsSinceMovement + 1;
-        const containsSpeech = enrichedEvents.some(event => event.type === 'speech');
-        this.turnsSinceSpeech = containsSpeech ? 0 : this.turnsSinceSpeech + 1;
+        const response = await this.ai.call(prompt, CharacterEventSchema);
 
-        return enrichedEvents;
+        this.turnsSinceMovement = response.destination ? 0 : this.turnsSinceMovement + 1;
+        this.turnsSinceSpeech = response.speech ? 0 : this.turnsSinceSpeech + 1;
+        return response;
     }
 
     /**

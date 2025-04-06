@@ -1,5 +1,5 @@
 import { EntityRegistry } from "../service/EntityRegistry";
-import { EnrichedEvent, Position } from "./types";
+import { CharacterEvent, DirectorEvent, EnrichedCharacterEvent, EnrichedDirectorEvent, EnrichedEvent, Position, TypedEvent } from "./types";
 
 const round = (value: number, places: number = 2) => Math.round(value * 10 ** places) / 10 ** places;
 
@@ -11,50 +11,90 @@ export class EventSanitizer {
     /**
      * Sanitizes a list of events.
      */
-    public sanitize(events: EnrichedEvent[]): EnrichedEvent[] {
-        // Deduplicate character_enter events by name, keeping only the first occurrence
-        const seenCharacterNames = new Set<string>();
-        events = events.filter(event => {
-            if (event.type === 'character_enter') {
-                if (seenCharacterNames.has(event.name)) {
-                    return false;
-                }
-                seenCharacterNames.add(event.name);
-            }
-            return true;
-        });
+    public sanitize(name: string, event: TypedEvent): EnrichedEvent {
+        switch (event.type) {
+            case 'director_event':
+                return this.sanitizeDirectorEvent(event);
+            case 'character_event':
+                return this.sanitizeCharacterEvent(name, event);
+            default:
+                return event;
+        }
+    }
 
-        // Sanitize each event
-        return events.map(event => {
-            const otherEvents = events.filter(e => e !== event);
-            const otherEventPositions = [
-                ...otherEvents.filter(e => e.type === 'character_enter').map(e => e.position),
-                ...otherEvents.filter(e => e.type === 'movement').map(e => e.destination),
-            ];
+    /**
+     * Sanitizes a director event
+     */
+    private sanitizeDirectorEvent(event: DirectorEvent): EnrichedDirectorEvent {
+        // Create a map of all new character positions, taking the last position for each character
+        const newPositions = Object.entries([
+            ...Object.entries(event.newCharacters ?? {}).map(([name, c]) => ({ name, position: c.position })),
+            ...Object.entries(event.characterEvents ?? {}).filter(([, e]) => e.destination).map(([name, e]) => ({ name, position: e.destination! })),
+        ].reduce(
+            (acc, { name, position }) => ({ ...acc, [name]: position }),
+            {} as Record<string, Position>
+        ));
 
-            switch (event.type) {
-                case 'character_enter':
-                    event.name = this.sanitizeText(event.name, 20);
-                    event.position = this.sanitizePosition(event.position, otherEventPositions);
-                    break;
-                case 'movement':
-                    event.destination = this.sanitizePosition(event.destination, otherEventPositions, event.sourceId);
-                    break;
-                case 'action':
-                    event.action = this.sanitizeText(event.action, 200);
-                    break;
-                case 'thought':
-                    event.content = this.sanitizeText(event.content, 200);
-                    break;
-                case 'generic':
-                    event.description = this.sanitizeText(event.description, 200);
-                    break;
-                case 'scene_change':
-                    event.newSceneDescription = this.sanitizeText(event.newSceneDescription, 200);
-                    break;
-            }
-            return event;
-        });
+        if (event.newCharacters) {
+            event.newCharacters = Object.fromEntries(
+                Object.entries(event.newCharacters).map(([name, c]) => {
+                    const otherCharacterPositions = newPositions.filter(([otherName]) => otherName !== name).map(([, position]) => position);
+                    return [name, {
+                        ...c,
+                        position: this.sanitizePosition(c.position, otherCharacterPositions),
+                    }];
+                })
+            );
+        }
+
+        // Avoid collisions on character events
+        if (event.characterEvents) {
+            event.characterEvents = Object.fromEntries(
+                Object.entries(event.characterEvents).map(([name, e]) => {
+                    if (!e.destination) return [name, e];
+                    const otherCharacterPositions = newPositions.filter(([otherName]) => otherName !== name).map(([, position]) => position);
+                    const sanitizedEvent = this.sanitizeCharacterEvent(name, e, otherCharacterPositions);
+                    return [name, sanitizedEvent];
+                })
+            );
+        }
+
+        // Sanitize text lengths
+        if (event.newSceneDescription) {
+            event.newSceneDescription = this.sanitizeText(event.newSceneDescription, 200);
+        }
+
+        if (event.genericWorldEvent) {
+            event.genericWorldEvent = this.sanitizeText(event.genericWorldEvent, 200);
+        }
+
+        return event;
+    }
+
+    /**
+     * Sanitizes a character event
+     */
+    private sanitizeCharacterEvent(
+        name: string,
+        event: CharacterEvent,
+        otherPositions: Position[] = []
+    ): EnrichedCharacterEvent {
+        const enrichedEvent = {
+            type: 'character_event' as const,
+            name,
+            position: this.entityRegistry.getCharacter(name)?.position ?? { x: 50, y: 50 },
+            ...event,
+        }
+        if (enrichedEvent.destination) {
+            enrichedEvent.destination = this.sanitizePosition(enrichedEvent.destination, otherPositions, name);
+        } else if (enrichedEvent.action) {
+            enrichedEvent.action = this.sanitizeText(enrichedEvent.action, 200);
+        } else if (enrichedEvent.thought) {
+            enrichedEvent.thought = this.sanitizeText(enrichedEvent.thought, 200);
+        } else if (enrichedEvent.speech) {
+            enrichedEvent.speech = this.sanitizeText(enrichedEvent.speech, 200);
+        }
+        return enrichedEvent;
     }
 
     /**

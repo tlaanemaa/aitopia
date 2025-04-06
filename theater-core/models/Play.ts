@@ -18,7 +18,7 @@ export class Play {
   private readonly entityRegistry = new EntityRegistry();
   private readonly assetRegistry = new AssetRegistry();
   private readonly eventSanitizer = new EventSanitizer(this.entityRegistry);
-  private currentEvents: EnrichedEvent[] = [];
+  private currentEvents?: EnrichedEvent;
   private currentScene: string = '';
   private isProcessing: boolean = false;
 
@@ -29,7 +29,7 @@ export class Play {
    * @param avatars - List of avatars to be used in the play
    * @param seedEvents - List of seed events to be used in the play
    */
-  constructor(aiConfig: AiConfig, avatars: string[], seedEvents: EnrichedEvent[] = []) {
+  constructor(aiConfig: AiConfig, avatars: string[], seedEvents?: EnrichedEvent) {
     this.ai = new Ai(aiConfig);
     this.assetRegistry.setAvatars(avatars);
     this.director = new Director(this.ai, this.entityRegistry, this.assetRegistry);
@@ -111,11 +111,13 @@ export class Play {
 
     try {
       this.isProcessing = true;
-      this.currentEvents = [];
+      this.currentEvents = undefined;
       // Get current entity and their events
-      this.currentEvents = input && input.length > 0
+      const newEvent = input && input.length > 0
         ? await this.director.handleUserInput(input)
         : await this.currentTurnEntity.takeTurn();
+
+      this.currentEvents = this.eventSanitizer.sanitize(this.currentTurnEntity.name, newEvent);
 
       // Handle internally and return events
       this.handleEvents();

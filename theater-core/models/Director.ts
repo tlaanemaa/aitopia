@@ -1,5 +1,5 @@
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { EnrichedEvent, buildDirectorEventSchemas } from "../events/types";
+import { EnrichedEvent, buildRuntimeDirectorEventSchema, Event } from "../events/types";
 import { Entity } from "./Entity";
 import { z } from "zod";
 import { ChatPromptValueInterface } from "@langchain/core/prompt_values";
@@ -83,66 +83,39 @@ export class Director extends Entity {
   }
 
   /**
-   * Builds the response format for the director
-   * We add a new field to all character events to specify the target character name.
-   * Then we union the character events with the world events.
-   */
-  private buildResponseFormat() {
-    const currentCharacters = this.entityRegistry.getCharacterNames();
-    const directorEventSchemas = buildDirectorEventSchemas(
-      currentCharacters,
-      this.assetRegistry.getAvatars()
-    );
-    return z
-      .array(directorEventSchemas)
-      .describe(
-        "Array of events describing what you want to do next to influence the story."
-      );
-  }
-
-  private async getEvents(prompt: ChatPromptValueInterface) {
-    const response = await this.ai.call(prompt, this.buildResponseFormat());
-    // Map over the response and replace the names with ids and positions
-    const enrichedEvents = response.map((event) => {
-      if ("subjectCharacterName" in event) {
-        const character = this.entityRegistry.getCharactersByName(
-          event.subjectCharacterName
-        )[0];
-        return {
-          ...event,
-          sourceId: character.id,
-          position: character.position,
-        };
-      } else {
-        return event;
-      }
-    });
-    return enrichedEvents;
-  }
-
-  /**
    * Take a turn
    */
-  public async takeTurn(): Promise<EnrichedEvent[]> {
+  public async takeTurn(): Promise<Event> {
     const prompt = await directorPromptTemplate.invoke({
       state: this.memory.getMemories() || "N/A",
       scene: this.memory.scene || "N/A",
       time: new Date().toLocaleTimeString("en-US"),
     });
-    return this.getEvents(prompt);
+    const responseFormat = buildRuntimeDirectorEventSchema(
+      this.assetRegistry.getAvatars() as [string, ...string[]],
+      this.entityRegistry.getCharacterNames(),
+    )
+
+    const response = await this.ai.call(prompt, responseFormat);
+    return response;
   }
 
   /**
    * Handle user input
    */
-  public async handleUserInput(input: string[]): Promise<EnrichedEvent[]> {
+  public async handleUserInput(input: string[]): Promise<Event> {
     const prompt = await userInputPromptTemplate.invoke({
       state: this.memory.getMemories() || "N/A",
       scene: this.memory.scene || "N/A",
       input: input.join("\n") || "N/A",
       time: new Date().toLocaleTimeString("en-US"),
     });
-    return this.getEvents(prompt);
+    const responseFormat = buildRuntimeDirectorEventSchema(
+      this.assetRegistry.getAvatars() as [string, ...string[]],
+      this.entityRegistry.getCharacterNames(),
+    )
+    const response = await this.ai.call(prompt, responseFormat);
+    return response;
   }
 
   /**

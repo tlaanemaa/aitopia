@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { EnrichedEvent } from '../events/types';
+import { Event, EnrichedEvent } from '../events/types';
 import { EntityRegistry } from '../service/EntityRegistry';
 import { AssetRegistry } from '../service/AssetRegistry';
 import { Memory } from './Memory';
@@ -23,7 +23,7 @@ export abstract class Entity {
   /**
    * Take your turn in the play
    */
-  public abstract takeTurn(): Promise<EnrichedEvent[]>;
+  public abstract takeTurn(): Promise<Event>;
 
   /**
    * Handle events happening in the world
