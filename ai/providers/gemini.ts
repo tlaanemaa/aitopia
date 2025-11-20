@@ -30,7 +30,7 @@ export async function callGemini(model: string, geminiKey: string, messages: Mes
  */
 export async function getGeminiModels() {
     return [
-        "gemini-2.0-flash-lite",
-        "gemini-2.0-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash",
     ] as const
 }
